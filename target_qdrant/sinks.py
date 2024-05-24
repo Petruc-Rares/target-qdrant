@@ -30,7 +30,7 @@ class QdrantSink(BatchSink):
         self.collection = self.config["collection"]
         
         endpoint = self.config["endpoint"]
-	port = self.config["port"]
+        port = self.config["port"]
         self.qdrant_client = QdrantClient(url=endpoint, port=port)
 
         try:
