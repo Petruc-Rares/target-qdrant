@@ -23,13 +23,13 @@ class TargetQdrant(Target):
             default="localhost",
             required=True
         ),
-	th.Property(
+        th.Property(
             "colllection",
             th.StringType,
             description="Collection to insert data into",
             default="jira_issues",
             required=True
-        )
+        ),
     ).to_dict()
 
     default_sink_class = QdrantSink
