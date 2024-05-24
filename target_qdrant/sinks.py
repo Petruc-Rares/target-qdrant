@@ -28,22 +28,21 @@ class QdrantSink(BatchSink):
         super().__init__(target, stream_name, schema, key_properties)
         
         self.collection = self.config["collection"]
-        port = self.port
-        self.qdrant_client = QdrantClient(url=endpoint, port=port)
-
+        
         endpoint = self.config["endpoint"]
-        collection = self.config["collection"]
+	port = self.config["port"]
+        self.qdrant_client = QdrantClient(url=endpoint, port=port)
 
         try:
             self.qdrant_client.create_collection(
-                collection_name=collection,
+                collection_name=self.collection,
                 vectors_config=VectorParams(size=4096, distance=Distance.COSINE),
             )
 
-            self.logger.info(f"Created collection {collection} successfully!")
+            self.logger.info(f"Created collection {self.collection} successfully!")
         except UnexpectedResponse as e:
             if e.status_code == 409:
-                self.logger.info(f"Collection {collection} already exists. Did NOT overwrite it!")
+                self.logger.info(f"Collection {self.collection} already exists. Did NOT overwrite it!")
                 # handle the error
             else:
                 raise  # re-raise the error if it's not a 409
