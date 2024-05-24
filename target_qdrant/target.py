@@ -24,10 +24,17 @@ class TargetQdrant(Target):
             required=True
         ),
         th.Property(
-            "colllection",
+            "collection",
             th.StringType,
             description="Collection to insert data into",
             default="jira_issues",
+            required=True
+        ),
+        th.Property(
+            "port",
+            th.StringType,
+            description="Port Qdrant instance is listening to",
+            default=6333,
             required=True
         ),
     ).to_dict()
