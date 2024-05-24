@@ -88,10 +88,10 @@ class QdrantSink(BatchSink):
         # TODO: when date fields (e.g. created, updated) will be passed, serialization might be required (check: https://github.com/timeplus-io/target-timeplus/blob/main/target_timeplus/sinks.py)
         payload = json.dumps(record)
 
-        self.rows.append(PointStruct(id=issue_id, vector=vector, payload=payload))
+        self.points.append(PointStruct(id=issue_id, vector=vector, payload=payload))
 
         #force flush the batch to avoid sending too much data (over 10MB) to Qdrant
-        if len(self.rows) > 100:
+        if len(self.points) > 100:
             self.process_batch(context=dict())
             self.start_batch(context=dict())
 
