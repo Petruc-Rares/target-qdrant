@@ -1,8 +1,8 @@
 """Qdrant target sink class, which handles writing streams."""
 
-import typing as t
-
 from __future__ import annotations
+
+import typing as t
 
 from singer_sdk.sinks import BatchSink
 from singer_sdk.target_base import Target
