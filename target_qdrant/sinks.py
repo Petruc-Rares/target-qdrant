@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import typing as t
+import json
 
 from singer_sdk.sinks import BatchSink
 from singer_sdk.target_base import Target
@@ -78,8 +79,21 @@ class QdrantSink(BatchSink):
         # with open(context["file_path"], "a") as csvfile:
         #     csvfile.write(record)
 
-        self.logger.info(f"This is a record: {record}")
-        # TODO: here will extract records and will add them to payload or vector, depending on their source
+        vector = record['embedding']
+        issue_id = record['issue_id']
+
+        del record['embedding']
+        del record['issue_id']
+
+        # TODO: when date fields (e.g. created, updated) will be passed, serialization might be required (check: https://github.com/timeplus-io/target-timeplus/blob/main/target_timeplus/sinks.py)
+        payload = json.dumps(record)
+
+        self.rows.append(PointStruct(id=issue_id, vector=vector, payload=payload))
+
+        #force flush the batch to avoid sending too much data (over 10MB) to Qdrant
+        if len(self.rows) > 100:
+            self.process_batch(context=dict())
+            self.start_batch(context=dict())
 
 
     def process_batch(self, context: dict) -> None:
