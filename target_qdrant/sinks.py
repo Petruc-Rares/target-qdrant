@@ -37,7 +37,7 @@ class QdrantSink(BatchSink):
         try:
             self.qdrant_client.create_collection(
                 collection_name=self.collection,
-                vectors_config=VectorParams(size=4096, distance=Distance.COSINE),
+                vectors_config=VectorParams(size=4096, distance=Distance.EUCLID),
             )
 
             self.logger.info(f"Created collection {self.collection} successfully!")
@@ -58,12 +58,6 @@ class QdrantSink(BatchSink):
         Args:
             context: Stream partition or context dictionary.
         """
-        # Sample:
-        # ------
-        # batch_key = context["batch_id"]
-        # context["file_path"] = f"{batch_key}.csv"
-        self.logger.info(f"Start Batch\n\n")
-
         self.points = []
 
     def process_record(self, record: dict, context: dict) -> None:
@@ -76,22 +70,16 @@ class QdrantSink(BatchSink):
             record: Individual record in the stream.
             context: Stream partition or context dictionary.
         """
-        # Sample:
-        # ------
-        # with open(context["file_path"], "a") as csvfile:
-        #     csvfile.write(record)
-        self.logger.info(f"Process Record\n\n")
 
-        vector = record['embedding']
+        vector = [float(feature) for feature in record['embedding']]
         issue_id = record['issue_id']
 
         del record['embedding']
         del record['issue_id']
 
         # TODO: when date fields (e.g. created, updated) will be passed, serialization might be required (check: https://github.com/timeplus-io/target-timeplus/blob/main/target_timeplus/sinks.py)
-        payload = json.dumps(record)
 
-        self.points.append(PointStruct(id=issue_id, vector=vector, payload=payload))
+        self.points.append(PointStruct(id=issue_id, vector=vector, payload=record))
 
         #force flush the batch to avoid sending too much data (over 10MB) to Qdrant
         if len(self.points) > 100:
@@ -105,11 +93,6 @@ class QdrantSink(BatchSink):
         Args:
             context: Stream partition or context dictionary.
         """
-        # Sample:
-        # ------
-        # client.upload(context["file_path"])  # Upload file
-        # Path(context["file_path"]).unlink()  # Delete local copy
-        self.logger.info(f"Process Batch\n\n")
         
         self.qdrant_client.upsert(
             collection_name=self.collection,
