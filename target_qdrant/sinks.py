@@ -62,6 +62,8 @@ class QdrantSink(BatchSink):
         # ------
         # batch_key = context["batch_id"]
         # context["file_path"] = f"{batch_key}.csv"
+        self.logger.info(f"Start Batch\n\n")
+
         self.points = []
 
     def process_record(self, record: dict, context: dict) -> None:
@@ -78,6 +80,7 @@ class QdrantSink(BatchSink):
         # ------
         # with open(context["file_path"], "a") as csvfile:
         #     csvfile.write(record)
+        self.logger.info(f"Process Record\n\n")
 
         vector = record['embedding']
         issue_id = record['issue_id']
@@ -106,6 +109,8 @@ class QdrantSink(BatchSink):
         # ------
         # client.upload(context["file_path"])  # Upload file
         # Path(context["file_path"]).unlink()  # Delete local copy
+        self.logger.info(f"Process Batch\n\n")
+        
         self.qdrant_client.upsert(
             collection_name=self.collection,
             wait=True,
