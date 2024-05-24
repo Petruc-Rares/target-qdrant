@@ -32,7 +32,7 @@ class TargetQdrant(Target):
         ),
         th.Property(
             "port",
-            th.StringType,
+            th.IntegerType,
             description="Port Qdrant instance is listening to",
             default=6333,
             required=True
