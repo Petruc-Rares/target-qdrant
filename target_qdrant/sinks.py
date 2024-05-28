@@ -29,7 +29,8 @@ class QdrantSink(BatchSink):
         super().__init__(target, stream_name, schema, key_properties)
         
         self.collection = self.config["collection"]
-        
+        self.collection = "testulet"
+
         endpoint = self.config["endpoint"]
         port = self.config["port"]
         self.qdrant_client = QdrantClient(url=endpoint, port=port)
