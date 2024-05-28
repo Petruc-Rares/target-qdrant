@@ -37,7 +37,7 @@ class QdrantSink(BatchSink):
         try:
             self.qdrant_client.create_collection(
                 collection_name=self.collection,
-                vectors_config=VectorParams(size=4096, distance=Distance.COSINE),
+                vectors_config=VectorParams(size=4096, distance=Distance.EUCLID),
             )
 
             self.logger.info(f"Created collection {self.collection} successfully!")
