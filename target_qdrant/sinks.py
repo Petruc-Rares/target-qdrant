@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import typing as t
 import openai
+import concurrent
 
 from singer_sdk.sinks import BatchSink
 from singer_sdk.target_base import Target
@@ -107,44 +108,46 @@ class QdrantSink(BatchSink):
         """
         self.points = []
         
-        # TODO: first make the API calls on all the summarization and embeddings
-        embedding_inputs = [issue_info['embedding_input'] for issue_info in self.issues]
         summarizer_inputs = [{"role": "user", "content": issue_info['summarizer_input']} for issue_info in self.issues]
+        embedding_inputs = [issue_info['embedding_input'] for issue_info in self.issues]
 
-        issues_summaries = openai.chat.completions.create(
-                                                    model=SUMMARY_MODEL,
-                                                    messages=summarizer_inputs,
-                                                    )
+        # API calls for summarization
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_PARALLEL_API_CALLS) as executor:
+            futures = []
+            for summarizer_input in summarizer_inputs:
+                futures.append(executor.submit(openai.chat.completions.create, 
+                                            model=SUMMARY_MODEL, 
+                                            messages=summarizer_input))
 
-        # DEBUGGED-OK
-        # for summarizer_input in summarizer_inputs:
-        #     self.logger.critical(f"summarizer_input: {summarizer_input}")
+            results = [future.result() for future in futures]
+            issues_summaries = [result.choices[0].message.content for result in results]
 
-        #     issues_summaries = openai.chat.completions.create(
-        #                                                 model=SUMMARY_MODEL,
-        #                                                 messages=[summarizer_input],
-        #                                                 )
+        # API calls for embedding
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_PARALLEL_API_CALLS) as executor:
+            futures = []
+            for embedding_input in embedding_inputs:
+                futures.append(executor.submit(openai.chat.completions.create, 
+                                            model=EMBEDDING_MODEL, 
+                                            input=[embedding_input]))
 
-        # issues_embeddings = openai.embeddings.create(
-        #                                                 model=EMBEDDING_MODEL,
-        #                                                 input=embedding_inputs
-        #                                        )
+            results = [future.result() for future in futures]
+            issues_embeddings = [result.data[0].embedding for result in results]
 
-        # for idx in range(self.issues):
-        #     issue_id = self.issues[idx]['issue_id']
-        #     record = self.issues[idx]['record']
 
-        #     summary = issues_summaries.choices[idx].message.content
-        #     embedding = issues_embeddings.data[idx].embedding
+        for idx in range(self.issues):
+            issue_id = self.issues[idx]['issue_id']
+            record = self.issues[idx]['record']
 
-        #     vector = [float(feature) for feature in embedding]
-        #     record['summary'] = summary
+            summary = issues_summaries[idx]
+            embedding = issues_embeddings[idx]
 
-        #     self.points.append(PointStruct(id=issue_id, vector=vector, payload=record))
+            vector = [float(feature) for feature in embedding]
+            record['summary'] = summary
 
-        # self.qdrant_client.upsert(
-        #     collection_name=self.collection,
-        #     wait=True,
-        #     points=self.points
-        # )
+            self.points.append(PointStruct(id=issue_id, vector=vector, payload=record))
 
+        self.qdrant_client.upsert(
+            collection_name=self.collection,
+            wait=True,
+            points=self.points
+        )
