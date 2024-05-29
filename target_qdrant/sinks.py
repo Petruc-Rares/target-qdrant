@@ -84,7 +84,7 @@ class QdrantSink(BatchSink):
         Args:
             context: Stream partition or context dictionary.
         """    
-        self.logger.info(f"START BATCH: Batch Number={self.batch_idx}, Inserted Points Number={self.batch_idx*MAX_PARALLEL_API_CALLS}")
+        self.logger.info(f"[START] START BATCH: Batch Number={self.batch_idx}, Summarized Points Number={self.batch_idx*MAX_PARALLEL_API_CALLS}")
 
         self.issues = []
 
@@ -138,8 +138,6 @@ class QdrantSink(BatchSink):
 
     def summarize(self):
         while True:
-            self.logger.info(f"[WAITING] SUMMARIZATION STAGE, Batch Number={self.batch_idx}")
-
             self.can_start_summarization.acquire()
 
             self.logger.info(f"[START] SUMMARIZATION STAGE, Batch Number={self.batch_idx}: Beginning summarization API calls")
@@ -174,8 +172,6 @@ class QdrantSink(BatchSink):
 
     def embed(self):
         while True:
-            self.logger.info(f"[WAITING] EMBEDDING STAGE, Batch Number={self.batch_idx}")
-
             self.can_start_embedding.acquire()
 
             self.logger.info(f"[START] EMBEDDING STAGE, Batch Number={self.batch_idx}")
