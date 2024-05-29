@@ -110,44 +110,54 @@ class QdrantSink(BatchSink):
         summarizer_inputs = [{"role": "user", "content": issue_info['summarizer_input']} for issue_info in self.issues]
         embedding_inputs = [issue_info['embedding_input'] for issue_info in self.issues]
 
+        for summarizer_input in summarizer_inputs:
+            self.logger.error(f"summarizer_input {summarizer_input}")
+
+            result = openai.chat.completions.create(
+                                        model=SUMMARY_MODEL, 
+                                        messages=[summarizer_input]
+                                        )
+
+
+
         # API calls for summarization
-        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_PARALLEL_API_CALLS) as executor:
-            futures = []
-            for summarizer_input in summarizer_inputs:
-                futures.append(executor.submit(openai.chat.completions.create, 
-                                            model=SUMMARY_MODEL, 
-                                            messages=[summarizer_input]))
+        # with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_PARALLEL_API_CALLS) as executor:
+        #     futures = []
+        #     for summarizer_input in summarizer_inputs:
+        #         futures.append(executor.submit(openai.chat.completions.create, 
+        #                                     model=SUMMARY_MODEL, 
+        #                                     messages=[summarizer_input]))
 
-            results = [future.result() for future in futures]
-            issues_summaries = [result.choices[0].message.content for result in results]
+        #     results = [future.result() for future in futures]
+        #     issues_summaries = [result.choices[0].message.content for result in results]
 
-        # API calls for embedding
-        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_PARALLEL_API_CALLS) as executor:
-            futures = []
-            for embedding_input in embedding_inputs:
-                futures.append(executor.submit(openai.embeddings.create, 
-                                            model=EMBEDDING_MODEL, 
-                                            input=[embedding_input]))
+        # # API calls for embedding
+        # with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_PARALLEL_API_CALLS) as executor:
+        #     futures = []
+        #     for embedding_input in embedding_inputs:
+        #         futures.append(executor.submit(openai.embeddings.create, 
+        #                                     model=EMBEDDING_MODEL, 
+        #                                     input=[embedding_input]))
 
-            results = [future.result() for future in futures]
-            issues_embeddings = [result.data[0].embedding for result in results]
+        #     results = [future.result() for future in futures]
+        #     issues_embeddings = [result.data[0].embedding for result in results]
 
-        self.points = []
+        # self.points = []
 
-        for idx in range(len(self.issues)):
-            issue_id = self.issues[idx]['issue_id']
-            record = self.issues[idx]['record']
+        # for idx in range(len(self.issues)):
+        #     issue_id = self.issues[idx]['issue_id']
+        #     record = self.issues[idx]['record']
 
-            summary = issues_summaries[idx]
-            embedding = issues_embeddings[idx]
+        #     summary = issues_summaries[idx]
+        #     embedding = issues_embeddings[idx]
 
-            vector = [float(feature) for feature in embedding]
-            record['summary'] = summary
+        #     vector = [float(feature) for feature in embedding]
+        #     record['summary'] = summary
 
-            self.points.append(PointStruct(id=issue_id, vector=vector, payload=record))
+        #     self.points.append(PointStruct(id=issue_id, vector=vector, payload=record))
 
-        self.qdrant_client.upsert(
-            collection_name=self.collection,
-            wait=True,
-            points=self.points
-        )
+        # self.qdrant_client.upsert(
+        #     collection_name=self.collection,
+        #     wait=True,
+        #     points=self.points
+        # )
