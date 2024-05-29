@@ -71,7 +71,7 @@ class QdrantSink(BatchSink):
         self.embedder_thread = threading.Thread(target=self.embed)
         self.threads = [self.summarizer_thread, self.embedder_thread]
         
-        for thread in self.threads():
+        for thread in self.threads:
             thread.start()
 
     def start_batch(self, context: dict) -> None:
