@@ -88,7 +88,7 @@ class QdrantSink(BatchSink):
 
         self.issues = []
 
-        self.logger.error(f"[CAREFUL] {self.tally_record_written}")
+        self.logger.error(f"[CAREFUL] {self._total_records_read}")
 
 
     def process_record(self, record: dict, context: dict) -> None:
