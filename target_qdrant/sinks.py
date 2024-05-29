@@ -60,11 +60,11 @@ class QdrantSink(BatchSink):
 
 
         # threads related definitions
-        self.can_start_summarization = threading.Event()
-        self.can_start_embedding = threading.Event()
+        self.can_start_summarization = threading.Semaphore()
+        self.can_start_embedding = threading.Semaphore()
 
-        self.summarization_over = threading.Event()
-        self.embedding_stage_copy_done = threading.Event()
+        self.summarization_over = threading.Semaphore()
+        self.embedding_stage_copy_done = threading.Semaphore()
 
         self.summarizer_thread = threading.Thread(target=self.summarize)
         self.embedder_thread = threading.Thread(target=self.embed)
@@ -84,7 +84,7 @@ class QdrantSink(BatchSink):
         """
 
         if self.batch_idx > 0:
-            self.summarization_over.wait()
+            self.summarization_over.acquire()
 
         self.issues = []
         self.batch_idx += 1
@@ -127,11 +127,11 @@ class QdrantSink(BatchSink):
         Args:
             context: Stream partition or context dictionary.
         """
-        self.can_start_summarization.set()
+        self.can_start_summarization.release()
 
     def summarize(self):
         while True:
-            self.can_start_summarization.wait()
+            self.can_start_summarization.acquire()
 
             summarizer_inputs = [{"role": "user", "content": issue_info['summarizer_input']} for issue_info in self.issues]
 
@@ -148,19 +148,19 @@ class QdrantSink(BatchSink):
 
                 # TODO: add issues_summaries to self.issues
 
-            self.can_start_embedding.set()
+            self.can_start_embedding.release()
 
-            self.embedding_stage_copy_done.wait()
+            self.embedding_stage_copy_done.acquire()
 
-            self.summarization_over.set()
+            self.summarization_over.release()
 
     def embed(self):
         while True:
-            self.can_start_embedding.wait()
+            self.can_start_embedding.acquire()
 
             # TODO: copy self.issues in smth else (careful to copy also the content of the dictionaries)
 
-            self.embedding_stage_copy_done.set()
+            self.embedding_stage_copy_done.release()
 
             embedding_inputs = [issue_info['embedding_input'] for issue_info in self.issues]
 
