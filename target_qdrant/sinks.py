@@ -69,6 +69,8 @@ class QdrantSink(BatchSink):
         self.summarization_over = threading.Semaphore(0)
         self.embedding_stage_copy_done = threading.Semaphore(0)
 
+        self.stages_finished = threading.Event()
+
         self.summarizer_thread = threading.Thread(target=self.summarize)
         self.embedder_thread = threading.Thread(target=self.embed)
         self.threads = [self.summarizer_thread, self.embedder_thread]
@@ -139,6 +141,8 @@ class QdrantSink(BatchSink):
 
         self.logger.info(f"[TRIGGER - PROCESS BATCH], Batch Number={self.batch_idx}: Summarization Stage can start")
 
+        self.summarization_over.acquire()
+
         # VERY IMPORTANT: we provide only empty context
         # not empty context is provided when draining the sinks (indicating a final batch)
         # in that case, we should wait until all read records are also written
@@ -146,12 +150,19 @@ class QdrantSink(BatchSink):
             while self.records_read_num != self.records_written_num:
                 self.logger.info(f"[TERMINATION - PROCESS BATCH] Can't end the program. Waiting for last batch: {self.batch_idx} to complete")
                 time.sleep(10)
+            
+            self.stages_finished.set()
+            self.logger.info(f"[TERMINATION - PROCESS BATCH] Signaling stages to stop")
 
-        self.summarization_over.acquire()
+            for stage in self.threads:
+                stage.join()
+
+            self.logger.info(f"[TERMINATION - PROCESS BATCH] No other message should follow this")
+
         self.batch_idx += 1
 
     def summarize(self):
-        while True:
+        while not self.stages_finished.is_set():
             self.can_start_summarization.acquire()
 
             self.logger.info(f"[START - SUMMARIZATION STAGE], Batch Number={self.batch_idx}: Beginning summarization API calls")
@@ -184,8 +195,10 @@ class QdrantSink(BatchSink):
 
             self.logger.info(f"[TRIGGER - SUMMARIZATION STAGE], Batch Number={self.batch_idx}: Ready for processing new batch")
 
+        self.logger.info(f"[TERMINATION - SUMMARIZATION STAGE] Stopping...")
+
     def embed(self):
-        while True:
+        while not self.stages_finished.is_set():
             self.can_start_embedding.acquire()
 
             self.logger.info(f"[START - EMBEDDING STAGE], Batch Number={self.batch_idx}")
@@ -231,3 +244,5 @@ class QdrantSink(BatchSink):
                 wait=True,
                 points=self.points
             )
+
+        self.logger.info(f"[TERMINATION - EMBEDDING STAGE] Stopping...")
