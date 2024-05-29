@@ -106,7 +106,6 @@ class QdrantSink(BatchSink):
         Args:
             context: Stream partition or context dictionary.
         """
-        self.points = []
         
         summarizer_inputs = [{"role": "user", "content": issue_info['summarizer_input']} for issue_info in self.issues]
         embedding_inputs = [issue_info['embedding_input'] for issue_info in self.issues]
@@ -133,8 +132,9 @@ class QdrantSink(BatchSink):
             results = [future.result() for future in futures]
             issues_embeddings = [result.data[0].embedding for result in results]
 
+        self.points = []
 
-        for idx in range(self.issues):
+        for idx in range(len(self.issues)):
             issue_id = self.issues[idx]['issue_id']
             record = self.issues[idx]['record']
 
