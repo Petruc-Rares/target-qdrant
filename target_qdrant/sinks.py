@@ -130,6 +130,7 @@ class QdrantSink(BatchSink):
         Args:
             context: Stream partition or context dictionary.
         """
+
         self.can_start_summarization.release()
 
         self.logger.info(f"[TRIGGER] PROCESS BATCH, Batch Number={self.batch_idx}: Summarization Stage can start")
