@@ -6,6 +6,7 @@ import typing as t
 import openai
 import concurrent
 import threading
+import copy
 
 from singer_sdk.sinks import BatchSink
 from singer_sdk.target_base import Target
@@ -146,7 +147,8 @@ class QdrantSink(BatchSink):
                 results = [future.result() for future in futures]
                 issues_summaries = [result.choices[0].message.content for result in results]
 
-                # TODO: add issues_summaries to self.issues
+                for issue, summary in zip(self.issues, issues_summaries):
+                    issue['record']['summary'] = summary
 
             self.can_start_embedding.release()
 
@@ -159,10 +161,11 @@ class QdrantSink(BatchSink):
             self.can_start_embedding.acquire()
 
             # TODO: copy self.issues in smth else (careful to copy also the content of the dictionaries)
+            issues_summarized = copy.deepcopy(self.issues)
 
             self.embedding_stage_copy_done.release()
 
-            embedding_inputs = [issue_info['embedding_input'] for issue_info in self.issues]
+            embedding_inputs = [issue_info['embedding_input'] for issue_info in issues_summarized]
 
             # API calls for embedding
             with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_PARALLEL_API_CALLS) as executor:
@@ -177,15 +180,13 @@ class QdrantSink(BatchSink):
 
             self.points = []
 
-            for idx in range(len(self.issues)):
-                issue_id = self.issues[idx]['issue_id']
-                record = self.issues[idx]['record']
+            for idx in range(len(issues_summarized)):
+                issue_id = issues_summarized[idx]['issue_id']
+                record = issues_summarized[idx]['record']
 
-                summary = issues_summaries[idx]
                 embedding = issues_embeddings[idx]
 
                 vector = [float(feature) for feature in embedding]
-                record['summary'] = summary
 
                 self.points.append(PointStruct(id=issue_id, vector=vector, payload=record))
 
