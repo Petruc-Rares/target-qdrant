@@ -111,10 +111,9 @@ class QdrantSink(BatchSink):
         embedding_inputs = [issue_info['embedding_input'] for issue_info in self.issues]
         summarizer_inputs = [{"role": "user", "content": issue_info['summarizer_input']} for issue_info in self.issues]
 
-        self.logger.critical(f"summarizer_input: {self.issues[0]['summarizer_input']}")
-
-
         for summarizer_input in summarizer_inputs:
+            self.logger.critical(f"summarizer_input: {summarizer_input}")
+
             issues_summaries = openai.chat.completions.create(
                                                         model=SUMMARY_MODEL,
                                                         messages=[summarizer_input],
