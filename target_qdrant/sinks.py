@@ -39,7 +39,8 @@ class QdrantSink(BatchSink):
         super().__init__(target, stream_name, schema, key_properties)
         
         self.batch_idx = 0
-        self.collection = self.config["collection"]
+        # self.collection = self.config["collection"]
+        self.test_collection = "test_collection"
 
         endpoint = self.config["endpoint"]
         port = self.config["port"]
