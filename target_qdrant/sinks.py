@@ -137,7 +137,7 @@ class QdrantSink(BatchSink):
 
         self.can_start_summarization.release()
 
-        self.logger.info(f"[TRIGGER - PROCESS BATCH], Batch Number={self.batch_idx}: Summarization Stage can start; EXTRA INFO: {context}")
+        self.logger.info(f"[TRIGGER - PROCESS BATCH], Batch Number={self.batch_idx}: Summarization Stage can start")
 
         # VERY IMPORTANT: we provide only empty context
         # not empty context is provided when draining the sinks (indicating a final batch)
