@@ -61,11 +61,11 @@ class QdrantSink(BatchSink):
 
 
         # threads related definitions
-        self.can_start_summarization = threading.Semaphore()
-        self.can_start_embedding = threading.Semaphore()
+        self.can_start_summarization = threading.Semaphore(0)
+        self.can_start_embedding = threading.Semaphore(0)
 
-        self.summarization_over = threading.Semaphore()
-        self.embedding_stage_copy_done = threading.Semaphore()
+        self.summarization_over = threading.Semaphore(0)
+        self.embedding_stage_copy_done = threading.Semaphore(0)
 
         self.summarizer_thread = threading.Thread(target=self.summarize)
         self.embedder_thread = threading.Thread(target=self.embed)
@@ -160,7 +160,6 @@ class QdrantSink(BatchSink):
         while True:
             self.can_start_embedding.acquire()
 
-            # TODO: copy self.issues in smth else (careful to copy also the content of the dictionaries)
             issues_summarized = copy.deepcopy(self.issues)
 
             self.embedding_stage_copy_done.release()
