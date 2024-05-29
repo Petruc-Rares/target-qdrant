@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import typing as t
-import json
+import openai
 
 from singer_sdk.sinks import BatchSink
 from singer_sdk.target_base import Target
@@ -14,6 +14,8 @@ from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.models import PointStruct
 
 MAX_PARALLEL_API_CALLS = 20
+EMBEDDING_MODEL ="Salesforce/SFR-Embedding-Mistral"
+SUMMARY_MODEL = "Llama3 70B" 
 
 class QdrantSink(BatchSink):
     """Qdrant target sink class."""
@@ -103,10 +105,30 @@ class QdrantSink(BatchSink):
         self.points = []
         
         # TODO: first make the API calls on all the summarization and embeddings
+        embedding_inputs = [issue_info['embedding_input'] for issue_info in self.issues]
+        summarizer_inputs = [{"role": "user", "content": issue_info['summarizer_input']} for issue_info in self.issues]
 
-        vector = [float(feature) for feature in embedding]
+        issues_summaries = openai.chat.completions.create(
+                                                       model=SUMMARY_MODEL,
+                                                       messages=summarizer_inputs,
+                                                    )
 
-        self.points.append(PointStruct(id=issue_id, vector=vector, payload=record))
+        issues_embeddings = openai.embeddings.create(
+                                                        model=EMBEDDING_MODEL,
+                                                        input=embedding_inputs
+                                               )
+
+        for idx in range(self.issues):
+            issue_id = self.issues[idx]['issue_id']
+            record = self.issues[idx]['record']
+
+            summary = issues_summaries.choices[idx].message.content
+            embedding = issues_embeddings.data[idx].embedding
+
+            vector = [float(feature) for feature in embedding]
+            record['summary'] = summary
+
+            self.points.append(PointStruct(id=issue_id, vector=vector, payload=record))
 
         self.qdrant_client.upsert(
             collection_name=self.collection,
