@@ -113,31 +113,33 @@ class QdrantSink(BatchSink):
 
         self.logger.critical(f"summarizer_input: {self.issues[0]['summarizer_input']}")
 
-        issues_summaries = openai.chat.completions.create(
-                                                       model=SUMMARY_MODEL,
-                                                       messages=summarizer_inputs,
-                                                    )
 
-        issues_embeddings = openai.embeddings.create(
-                                                        model=EMBEDDING_MODEL,
-                                                        input=embedding_inputs
-                                               )
+        for summarizer_input in summarizer_inputs:
+            issues_summaries = openai.chat.completions.create(
+                                                        model=SUMMARY_MODEL,
+                                                        messages=[summarizer_input],
+                                                        )
 
-        for idx in range(self.issues):
-            issue_id = self.issues[idx]['issue_id']
-            record = self.issues[idx]['record']
+        # issues_embeddings = openai.embeddings.create(
+        #                                                 model=EMBEDDING_MODEL,
+        #                                                 input=embedding_inputs
+        #                                        )
 
-            summary = issues_summaries.choices[idx].message.content
-            embedding = issues_embeddings.data[idx].embedding
+        # for idx in range(self.issues):
+        #     issue_id = self.issues[idx]['issue_id']
+        #     record = self.issues[idx]['record']
 
-            vector = [float(feature) for feature in embedding]
-            record['summary'] = summary
+        #     summary = issues_summaries.choices[idx].message.content
+        #     embedding = issues_embeddings.data[idx].embedding
 
-            self.points.append(PointStruct(id=issue_id, vector=vector, payload=record))
+        #     vector = [float(feature) for feature in embedding]
+        #     record['summary'] = summary
 
-        self.qdrant_client.upsert(
-            collection_name=self.collection,
-            wait=True,
-            points=self.points
-        )
+        #     self.points.append(PointStruct(id=issue_id, vector=vector, payload=record))
+
+        # self.qdrant_client.upsert(
+        #     collection_name=self.collection,
+        #     wait=True,
+        #     points=self.points
+        # )
 
