@@ -84,13 +84,13 @@ class QdrantSink(BatchSink):
         Args:
             context: Stream partition or context dictionary.
         """
+        if self.batch_idx > 0:
+            self.batch_idx += 1
+            self.summarization_over.acquire()
+    
         self.logger.info(f"START BATCH: Batch Number={self.batch_idx}, Inserted Points Number={self.batch_idx*MAX_PARALLEL_API_CALLS}")
 
-        if self.batch_idx > 0:
-            self.summarization_over.acquire()
-
         self.issues = []
-        self.batch_idx += 1
 
         self.logger.error(f"[CAREFUL] {self._pending_batch}")
 
