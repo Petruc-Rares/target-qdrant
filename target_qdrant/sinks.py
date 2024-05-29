@@ -5,6 +5,7 @@ from __future__ import annotations
 import typing as t
 import openai
 import concurrent
+import threading
 
 from singer_sdk.sinks import BatchSink
 from singer_sdk.target_base import Target
@@ -36,6 +37,7 @@ class QdrantSink(BatchSink):
 
         super().__init__(target, stream_name, schema, key_properties)
         
+        self.batch_idx = 0
         self.collection = self.config["collection"]
 
         endpoint = self.config["endpoint"]
@@ -57,6 +59,20 @@ class QdrantSink(BatchSink):
                 raise  # re-raise the error if it's not a 409
 
 
+        # threads related definitions
+        self.can_start_summarization = threading.Event()
+        self.can_start_embedding = threading.Event()
+
+        self.summarization_over = threading.Event()
+        self.embedding_stage_copy_done = threading.Event()
+
+        self.summarizer_thread = threading.Thread(target=self.summarize)
+        self.embedder_thread = threading.Thread(target=self.embed)
+        self.threads = [self.summarizer_thread, self.embedder_thread]
+        
+        for thread in self.threads():
+            thread.start()
+
     def start_batch(self, context: dict) -> None:
         """Start a batch.
 
@@ -66,7 +82,12 @@ class QdrantSink(BatchSink):
         Args:
             context: Stream partition or context dictionary.
         """
+
+        if self.batch_idx > 0:
+            self.summarization_over.wait()
+
         self.issues = []
+        self.batch_idx += 1
 
 
     def process_record(self, record: dict, context: dict) -> None:
@@ -106,48 +127,70 @@ class QdrantSink(BatchSink):
         Args:
             context: Stream partition or context dictionary.
         """
-        
-        summarizer_inputs = [{"role": "user", "content": issue_info['summarizer_input']} for issue_info in self.issues]
-        embedding_inputs = [issue_info['embedding_input'] for issue_info in self.issues]
+        self.can_start_summarization.set()
 
-        # API calls for summarization
-        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_PARALLEL_API_CALLS) as executor:
-            futures = []
-            for summarizer_input in summarizer_inputs:
-                futures.append(executor.submit(openai.chat.completions.create, 
-                                            model=SUMMARY_MODEL, 
-                                            messages=[summarizer_input]))
+    def summarize(self):
+        while True:
+            self.can_start_summarization.wait()
 
-            results = [future.result() for future in futures]
-            issues_summaries = [result.choices[0].message.content for result in results]
+            summarizer_inputs = [{"role": "user", "content": issue_info['summarizer_input']} for issue_info in self.issues]
 
-        # API calls for embedding
-        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_PARALLEL_API_CALLS) as executor:
-            futures = []
-            for embedding_input in embedding_inputs:
-                futures.append(executor.submit(openai.embeddings.create, 
-                                            model=EMBEDDING_MODEL, 
-                                            input=[embedding_input]))
+            # parallel API calls for summarization
+            with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_PARALLEL_API_CALLS) as executor:
+                futures = []
+                for summarizer_input in summarizer_inputs:
+                    futures.append(executor.submit(openai.chat.completions.create, 
+                                                model=SUMMARY_MODEL, 
+                                                messages=[summarizer_input]))
 
-            results = [future.result() for future in futures]
-            issues_embeddings = [result.data[0].embedding for result in results]
+                results = [future.result() for future in futures]
+                issues_summaries = [result.choices[0].message.content for result in results]
 
-        self.points = []
+                # TODO: add issues_summaries to self.issues
 
-        for idx in range(len(self.issues)):
-            issue_id = self.issues[idx]['issue_id']
-            record = self.issues[idx]['record']
+            self.can_start_embedding.set()
 
-            summary = issues_summaries[idx]
-            embedding = issues_embeddings[idx]
+            self.embedding_stage_copy_done.wait()
 
-            vector = [float(feature) for feature in embedding]
-            record['summary'] = summary
+            self.summarization_over.set()
 
-            self.points.append(PointStruct(id=issue_id, vector=vector, payload=record))
+    def embed(self):
+        while True:
+            self.can_start_embedding.wait()
 
-        self.qdrant_client.upsert(
-            collection_name=self.collection,
-            wait=True,
-            points=self.points
-        )
+            # TODO: copy self.issues in smth else (careful to copy also the content of the dictionaries)
+
+            self.embedding_stage_copy_done.set()
+
+            embedding_inputs = [issue_info['embedding_input'] for issue_info in self.issues]
+
+            # API calls for embedding
+            with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_PARALLEL_API_CALLS) as executor:
+                futures = []
+                for embedding_input in embedding_inputs:
+                    futures.append(executor.submit(openai.embeddings.create, 
+                                                model=EMBEDDING_MODEL, 
+                                                input=[embedding_input]))
+
+                results = [future.result() for future in futures]
+                issues_embeddings = [result.data[0].embedding for result in results]
+
+            self.points = []
+
+            for idx in range(len(self.issues)):
+                issue_id = self.issues[idx]['issue_id']
+                record = self.issues[idx]['record']
+
+                summary = issues_summaries[idx]
+                embedding = issues_embeddings[idx]
+
+                vector = [float(feature) for feature in embedding]
+                record['summary'] = summary
+
+                self.points.append(PointStruct(id=issue_id, vector=vector, payload=record))
+
+            self.qdrant_client.upsert(
+                collection_name=self.collection,
+                wait=True,
+                points=self.points
+            )
