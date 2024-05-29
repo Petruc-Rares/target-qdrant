@@ -13,6 +13,8 @@ from qdrant_client.models import Distance, VectorParams
 from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.models import PointStruct
 
+MAX_PARALLEL_API_CALLS = 20
+
 class QdrantSink(BatchSink):
     """Qdrant target sink class."""
 
@@ -58,7 +60,8 @@ class QdrantSink(BatchSink):
         Args:
             context: Stream partition or context dictionary.
         """
-        self.points = []
+        self.issues = []
+
 
     def process_record(self, record: dict, context: dict) -> None:
         """Process the record.
@@ -71,18 +74,22 @@ class QdrantSink(BatchSink):
             context: Stream partition or context dictionary.
         """
 
-        vector = [float(feature) for feature in record['embedding']]
-        issue_id = record['issue_id']
+        issue_info = {
+            'embedding_input': record['embedding_input'],
+            'summarizer_input': record['summarizer_input'],
+            'issue_id': record['issue_id']
+        }
 
-        del record['embedding']
+        del record['embedding_input']
+        del record['summarizer_input']
         del record['issue_id']
 
-        # TODO: when date fields (e.g. created, updated) will be passed, serialization might be required (check: https://github.com/timeplus-io/target-timeplus/blob/main/target_timeplus/sinks.py)
+        issue_info['record'] = record
 
-        self.points.append(PointStruct(id=issue_id, vector=vector, payload=record))
+        self.issues.append(issue_info)
 
-        #force flush the batch to avoid sending too much data (over 10MB) to Qdrant
-        if len(self.points) > 100:
+        #force flush the batch when number of parallel API calls reached:
+        if len(self.issues) > MAX_PARALLEL_API_CALLS:
             self.process_batch(context=dict())
             self.start_batch(context=dict())
 
@@ -93,9 +100,17 @@ class QdrantSink(BatchSink):
         Args:
             context: Stream partition or context dictionary.
         """
+        self.points = []
         
+        # TODO: first make the API calls on all the summarization and embeddings
+
+        vector = [float(feature) for feature in embedding]
+
+        self.points.append(PointStruct(id=issue_id, vector=vector, payload=record))
+
         self.qdrant_client.upsert(
             collection_name=self.collection,
             wait=True,
             points=self.points
         )
+
