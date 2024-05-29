@@ -131,7 +131,7 @@ class QdrantSink(BatchSink):
 
         self.can_start_summarization.release()
 
-        self.logger.info(f"[TRIGGER] PROCESS BATCH, Batch Number={self.batch_idx}: Summarization Stage can start")
+        self.logger.info(f"[TRIGGER] PROCESS BATCH, Batch Number={self.batch_idx}: Summarization Stage can start; EXTRA INFO: {context}")
 
         self.summarization_over.acquire()
         self.batch_idx += 1
