@@ -7,6 +7,7 @@ import openai
 import concurrent
 import threading
 import copy
+import time
 
 from singer_sdk.sinks import BatchSink
 from singer_sdk.target_base import Target
@@ -75,6 +76,10 @@ class QdrantSink(BatchSink):
         for thread in self.threads:
             thread.start()
 
+        # program termination related variables
+        self.records_read_num = 0
+        self.records_written_num = 0
+
     def start_batch(self, context: dict) -> None:
         """Start a batch.
 
@@ -116,6 +121,8 @@ class QdrantSink(BatchSink):
 
         self.issues.append(issue_info)
 
+        self.records_read_num += 1
+
         #force flush the batch when number of parallel API calls reached:
         if len(self.issues) >= MAX_PARALLEL_API_CALLS:
             self.process_batch(context=dict())
@@ -132,6 +139,14 @@ class QdrantSink(BatchSink):
         self.can_start_summarization.release()
 
         self.logger.info(f"[TRIGGER] PROCESS BATCH, Batch Number={self.batch_idx}: Summarization Stage can start; EXTRA INFO: {context}")
+
+        # VERY IMPORTANT: we provide only empty context
+        # not empty context is provided when draining the sinks (indicating a final batch)
+        # in that case, we should wait until all read records are also written
+        if context:
+            while self.records_read_num != self.records_written_num:
+                self.logger.info(f"[TERMINATION - PROCESS BATCH] Can't end the program. Waiting for last batch: {self.batch_idx} to complete")
+                time.sleep(10)
 
         self.summarization_over.acquire()
         self.batch_idx += 1
@@ -209,6 +224,8 @@ class QdrantSink(BatchSink):
                 vector = [float(feature) for feature in embedding]
 
                 self.points.append(PointStruct(id=issue_id, vector=vector, payload=record))
+
+            self.records_written_num += len(self.points)
 
             self.qdrant_client.upsert(
                 collection_name=self.collection,
