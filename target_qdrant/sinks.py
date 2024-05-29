@@ -85,7 +85,6 @@ class QdrantSink(BatchSink):
             context: Stream partition or context dictionary.
         """
         if self.batch_idx > 0:
-            self.batch_idx += 1
             self.summarization_over.acquire()
     
         self.logger.info(f"START BATCH: Batch Number={self.batch_idx}, Inserted Points Number={self.batch_idx*MAX_PARALLEL_API_CALLS}")
@@ -169,6 +168,7 @@ class QdrantSink(BatchSink):
 
             self.logger.info(f"[OTHERS] SUMMARIZATION STAGE, Batch Number={self.batch_idx}: Summary Stage can be rerun safely, with no impact on subsequent stages")
 
+            self.batch_idx += 1
             self.summarization_over.release()
 
             self.logger.info(f"[TRIGGER] SUMMARIZATION STAGE, Batch Number={self.batch_idx}: Ready for processing new batch")
@@ -182,10 +182,11 @@ class QdrantSink(BatchSink):
             self.logger.info(f"[START] EMBEDDING STAGE, Batch Number={self.batch_idx}")
 
             issues_summarized = copy.deepcopy(self.issues)
+            batch_idx = self.batch_idx
 
             self.embedding_stage_copy_done.release()
 
-            self.logger.info(f"[TRIGGER] EMBEDDING STAGE, Batch Number={self.batch_idx}: Summary information locally saved")
+            self.logger.info(f"[TRIGGER] EMBEDDING STAGE, Batch Number={batch_idx}: Summary information locally saved")
 
             embedding_inputs = [issue_info['embedding_input'] for issue_info in issues_summarized]
 
@@ -200,7 +201,7 @@ class QdrantSink(BatchSink):
                 results = [future.result() for future in futures]
                 issues_embeddings = [result.data[0].embedding for result in results]
 
-            self.logger.info(f"[OTHERS] EMBEDDING STAGE, Batch Number={self.batch_idx}: API calls finished successfully")
+            self.logger.info(f"[OTHERS] EMBEDDING STAGE, Batch Number={batch_idx}: API calls finished successfully")
 
             self.points = []
 
