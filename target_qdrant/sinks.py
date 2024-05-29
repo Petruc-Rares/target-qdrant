@@ -92,6 +92,8 @@ class QdrantSink(BatchSink):
         self.issues = []
         self.batch_idx += 1
 
+        self.logger.error(f"[CAREFUL] {self._pending_batch}")
+
 
     def process_record(self, record: dict, context: dict) -> None:
         """Process the record.
