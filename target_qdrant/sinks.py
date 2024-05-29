@@ -40,7 +40,7 @@ class QdrantSink(BatchSink):
         
         self.batch_idx = 0
         # self.collection = self.config["collection"]
-        self.test_collection = "test_collection"
+        self.collection = "test_collection"
 
         endpoint = self.config["endpoint"]
         port = self.config["port"]
