@@ -83,10 +83,7 @@ class QdrantSink(BatchSink):
 
         Args:
             context: Stream partition or context dictionary.
-        """
-        if self.batch_idx > 0:
-            self.summarization_over.acquire()
-    
+        """    
         self.logger.info(f"START BATCH: Batch Number={self.batch_idx}, Inserted Points Number={self.batch_idx*MAX_PARALLEL_API_CALLS}")
 
         self.issues = []
@@ -122,7 +119,7 @@ class QdrantSink(BatchSink):
         #force flush the batch when number of parallel API calls reached:
         if len(self.issues) >= MAX_PARALLEL_API_CALLS:
             self.process_batch(context=dict())
-            # self.start_batch(context=dict())
+            self.start_batch(context=dict())
 
 
     def process_batch(self, context: dict) -> None:
@@ -135,6 +132,9 @@ class QdrantSink(BatchSink):
         self.can_start_summarization.release()
 
         self.logger.info(f"[TRIGGER] PROCESS BATCH, Batch Number={self.batch_idx}: Summarization Stage can start")
+
+        self.summarization_over.acquire()
+        self.batch_idx += 1
 
     def summarize(self):
         while True:
@@ -168,7 +168,6 @@ class QdrantSink(BatchSink):
 
             self.logger.info(f"[OTHERS] SUMMARIZATION STAGE, Batch Number={self.batch_idx}: Summary Stage can be rerun safely, with no impact on subsequent stages")
 
-            self.batch_idx += 1
             self.summarization_over.release()
 
             self.logger.info(f"[TRIGGER] SUMMARIZATION STAGE, Batch Number={self.batch_idx}: Ready for processing new batch")
