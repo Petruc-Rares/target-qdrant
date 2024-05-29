@@ -13,6 +13,9 @@ from qdrant_client.models import Distance, VectorParams
 from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.models import PointStruct
 
+openai.api_key = 'X'
+openai.base_url = "https://devai.4psa.me/llm/v1/"
+
 MAX_PARALLEL_API_CALLS = 20
 EMBEDDING_MODEL ="Salesforce/SFR-Embedding-Mistral"
 SUMMARY_MODEL = "Llama3 70B" 
