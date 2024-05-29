@@ -95,7 +95,7 @@ class QdrantSink(BatchSink):
         self.issues.append(issue_info)
 
         #force flush the batch when number of parallel API calls reached:
-        if len(self.issues) > MAX_PARALLEL_API_CALLS:
+        if len(self.issues) >= MAX_PARALLEL_API_CALLS:
             self.process_batch(context=dict())
             self.start_batch(context=dict())
 
