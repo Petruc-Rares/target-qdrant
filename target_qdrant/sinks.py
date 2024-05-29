@@ -117,7 +117,7 @@ class QdrantSink(BatchSink):
             for summarizer_input in summarizer_inputs:
                 futures.append(executor.submit(openai.chat.completions.create, 
                                             model=SUMMARY_MODEL, 
-                                            messages=summarizer_input))
+                                            messages=[summarizer_input]))
 
             results = [future.result() for future in futures]
             issues_summaries = [result.choices[0].message.content for result in results]
