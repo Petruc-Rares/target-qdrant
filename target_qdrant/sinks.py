@@ -17,6 +17,8 @@ from qdrant_client.models import Distance, VectorParams
 from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.models import PointStruct
 
+from openai import OpenAIError
+
 openai.api_key = 'XYZ'
 openai.base_url = "https://devai.4psa.me/llm/v1/"
 
@@ -163,7 +165,7 @@ class QdrantSink(BatchSink):
         self.batch_idx += 1
 
     def summarize(self):
-        while not self.stages_finished.is_set():
+        while True:
             self.can_start_summarization.acquire()
 
             self.logger.info(f"[START - SUMMARIZATION STAGE], Batch Number={self.batch_idx}: Beginning summarization API calls")
@@ -178,7 +180,39 @@ class QdrantSink(BatchSink):
                                                 model=SUMMARY_MODEL, 
                                                 messages=[summarizer_input]))
 
-                results = [future.result() for future in futures]
+                results = []
+
+                for idx, future in enumerate(futures):
+                    tokens_to_trim = 16
+                    tokens_to_trim_multiplier = 1.2
+                    token_to_words = 0.75
+
+                    while True:
+                        try:
+                            result = future.result()
+                            results.append(result)
+                            break
+                        except OpenAIError as e:
+                            if e.code == 400:
+                                self.logger.warning(f"[ERROR - SUMMARIZATION STAGE]: {e.message}")
+                                
+                                summarizer_input = summarizer_inputs[idx]
+
+                                words_to_trim = int(tokens_to_trim * token_to_words)
+                                
+                                self.logger.info(f"Before trimming, summarization input had {len(summarizer_input.split())} words")
+
+                                summarizer_input = ' '.join(summarizer_input.split()[:-words_to_trim])
+
+                                self.logger.info(f"After trimming, summarization input has {len(summarizer_input.split())} words")
+                            
+                                tokens_to_trim *= tokens_to_trim_multiplier
+
+                                future = executor.submit(openai.chat.completions.create, 
+                                                            model=SUMMARY_MODEL, 
+                                                            messages=[summarizer_input])
+
+                
                 issues_summaries = [result.choices[0].message.content for result in results]
 
                 for issue, summary in zip(self.issues, issues_summaries):
@@ -199,7 +233,7 @@ class QdrantSink(BatchSink):
         self.logger.info(f"[TERMINATION - SUMMARIZATION STAGE] Stopping...")
 
     def embed(self):
-        while not self.stages_finished.is_set():
+        while True:
             self.can_start_embedding.acquire()
 
             self.logger.info(f"[START - EMBEDDING STAGE], Batch Number={self.batch_idx}")
