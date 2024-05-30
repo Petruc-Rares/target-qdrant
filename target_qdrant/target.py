@@ -9,7 +9,9 @@ from target_qdrant.sinks import (
     QdrantSink,
 )
 
-if th.TYPE_CHECKING:
+import typing as t
+
+if t.TYPE_CHECKING:
     from pathlib import PurePath
 
 class TargetQdrant(Target):
