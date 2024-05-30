@@ -20,7 +20,7 @@ from qdrant_client.models import PointStruct
 openai.api_key = 'XYZ'
 openai.base_url = "https://devai.4psa.me/llm/v1/"
 
-MAX_PARALLEL_API_CALLS = 100
+MAX_PARALLEL_API_CALLS = 500
 EMBEDDING_MODEL ="Salesforce/SFR-Embedding-Mistral"
 SUMMARY_MODEL = "Llama3 70B" 
 
