@@ -214,7 +214,8 @@ class QdrantSink(BatchSink):
                                 future = executor.submit(openai.chat.completions.create, 
                                                             model=SUMMARY_MODEL, 
                                                             messages=[process_API_input(content)])
-
+                                
+                                summarizer_inputs[idx]["content"] = content
                 
                 issues_summaries = [result.choices[0].message.content for result in results]
 
