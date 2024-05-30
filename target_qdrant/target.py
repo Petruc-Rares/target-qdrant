@@ -9,9 +9,23 @@ from target_qdrant.sinks import (
     QdrantSink,
 )
 
+if th.TYPE_CHECKING:
+    from pathlib import PurePath
 
 class TargetQdrant(Target):
     """Sample target for Qdrant."""
+
+    def __init__(
+        self,
+        *,
+        config: dict | PurePath | str | list[PurePath | str] | None = None,
+        parse_env_config: bool = False,
+        validate_config: bool = True,
+        setup_mapper: bool = True,
+    ) -> None:
+        super().__init__(config=config, parse_env_config=parse_env_config, validate_config=validate_config, setup_mapper=setup_mapper)
+        # overwrite MAX_RECORD_AGE to 1 day
+        self._MAX_RECORD_AGE_IN_MINUTES = 1 * 24 * 60
 
     name = "target-qdrant"
 
