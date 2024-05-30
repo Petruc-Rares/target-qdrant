@@ -203,7 +203,7 @@ class QdrantSink(BatchSink):
 
                                 words_to_trim = int(tokens_to_trim * token_to_words)
                                 
-                                self.logger.info(f"Before trimming, summarization input had {len(summarizer_input.split())} words")
+                                self.logger.info(f"Before trimming, summarization input had {len(content.split())} words")
 
                                 content = ' '.join(content.split()[:-words_to_trim])
 
