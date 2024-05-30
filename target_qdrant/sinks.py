@@ -71,8 +71,6 @@ class QdrantSink(BatchSink):
         self.summarization_over = threading.Semaphore(0)
         self.embedding_stage_copy_done = threading.Semaphore(0)
 
-        self.stages_finished = threading.Event()
-
         # setting threads of daemon type, as we want them to exit the moment the main thread exits
         self.summarizer_thread = threading.Thread(target=self.summarize, daemon=True)
         self.embedder_thread = threading.Thread(target=self.embed, daemon=True)
@@ -154,7 +152,6 @@ class QdrantSink(BatchSink):
                 self.logger.info(f"[TERMINATION - PROCESS BATCH] Can't end the program. Waiting for last batch: {self.batch_idx} to complete")
                 time.sleep(10)
             
-            self.stages_finished.set()
             self.logger.info(f"[TERMINATION - PROCESS BATCH] Main thread stopping...")
 
             # for stage in self.threads:
