@@ -22,7 +22,7 @@ from openai import OpenAIError
 openai.api_key = 'XYZ'
 openai.base_url = "https://devai.4psa.me/llm/v1/"
 
-MAX_PARALLEL_API_CALLS = 200
+MAX_PARALLEL_API_CALLS = 20
 EMBEDDING_MODEL ="Salesforce/SFR-Embedding-Mistral"
 SUMMARY_MODEL = "Llama3 70B" 
 
