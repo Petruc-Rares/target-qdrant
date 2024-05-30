@@ -71,8 +71,9 @@ class QdrantSink(BatchSink):
 
         self.stages_finished = threading.Event()
 
-        self.summarizer_thread = threading.Thread(target=self.summarize)
-        self.embedder_thread = threading.Thread(target=self.embed)
+        # setting threads of daemon type, as we want them to exit the moment the main thread exits
+        self.summarizer_thread = threading.Thread(target=self.summarize, daemon=True)
+        self.embedder_thread = threading.Thread(target=self.embed, daemon=True)
         self.threads = [self.summarizer_thread, self.embedder_thread]
         
         for thread in self.threads:
