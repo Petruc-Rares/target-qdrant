@@ -165,12 +165,15 @@ class QdrantSink(BatchSink):
         self.batch_idx += 1
 
     def summarize(self):
+        def process_API_input(content):
+            return {"role": "user", "content": content}
+
         while True:
             self.can_start_summarization.acquire()
 
             self.logger.info(f"[START - SUMMARIZATION STAGE], Batch Number={self.batch_idx}: Beginning summarization API calls")
 
-            summarizer_inputs = [{"role": "user", "content": issue_info['summarizer_input']} for issue_info in self.issues]
+            summarizer_inputs = [process_API_input(issue_info['summarizer_input']) for issue_info in self.issues]
 
             # parallel API calls for summarization
             with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_PARALLEL_API_CALLS) as executor:
@@ -196,21 +199,21 @@ class QdrantSink(BatchSink):
                             if e.code == 400:
                                 self.logger.warning(f"[ERROR - SUMMARIZATION STAGE]: {e.message}")
                                 
-                                summarizer_input = summarizer_inputs[idx]
+                                content = summarizer_inputs[idx]["content"]
 
                                 words_to_trim = int(tokens_to_trim * token_to_words)
                                 
                                 self.logger.info(f"Before trimming, summarization input had {len(summarizer_input.split())} words")
 
-                                summarizer_input = ' '.join(summarizer_input.split()[:-words_to_trim])
+                                content = ' '.join(content.split()[:-words_to_trim])
 
-                                self.logger.info(f"After trimming, summarization input has {len(summarizer_input.split())} words")
+                                self.logger.info(f"After trimming, summarization input has {len(content.split())} words")
                             
                                 tokens_to_trim *= tokens_to_trim_multiplier
 
                                 future = executor.submit(openai.chat.completions.create, 
                                                             model=SUMMARY_MODEL, 
-                                                            messages=[summarizer_input])
+                                                            messages=[process_API_input(content)])
 
                 
                 issues_summaries = [result.choices[0].message.content for result in results]
