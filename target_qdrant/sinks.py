@@ -153,12 +153,12 @@ class QdrantSink(BatchSink):
                 time.sleep(10)
             
             self.stages_finished.set()
-            self.logger.info(f"[TERMINATION - PROCESS BATCH] Signaling stages to stop")
+            self.logger.info(f"[TERMINATION - PROCESS BATCH] Main thread stopping...")
 
-            for stage in self.threads:
-                stage.join()
+            # for stage in self.threads:
+                # stage.join()
 
-            self.logger.info(f"[TERMINATION - PROCESS BATCH] No other message should follow this")
+            # self.logger.info(f"[TERMINATION - PROCESS BATCH] No other message should follow this")
 
         self.batch_idx += 1
 
