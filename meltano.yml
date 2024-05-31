@@ -18,11 +18,3 @@ plugins:
       endpoint: 'localhost'
       collection: 'default'
       port: 6333
-    settings:
-    # TODO: To configure using Meltano, declare settings and their types here:
-    - name: endpoint
-      kind: string
-    - name: collection
-      kind: string
-    - name: port
-      kind: integer
