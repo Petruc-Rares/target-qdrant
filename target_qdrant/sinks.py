@@ -292,7 +292,7 @@ class QdrantSink(BatchSink):
                 results = [future.result() for future in futures]
                 issues_embeddings = [result.data[0].embedding for result in results]
 
-            self.logger.info(f"[OTHERS - EMBEDDING STAGE], Batch Number={batch_idx}: API calls finished successfully")
+            self.logger.info(f"[API - EMBEDDING STAGE], Batch Number={batch_idx}: API calls finished successfully")
 
             self.points = []
 
@@ -314,14 +314,18 @@ class QdrantSink(BatchSink):
                 points=self.points
             )
 
+            self.logger.info("[DB QDRANT]: Insert done successfully")
+
             # insert to PostgreSQL AI generated data to be used if needed for other use cases
             for point in self.points:
                 self.cursor.execute(
                     """                    
-                        INSERT INTO issues (id, vector, summary)
+                        INSERT INTO tap_jira.issues_ai_info (id, vector, summary)
                         VALUES (%s, %s, %s);
                     """, (point.id, point.vector, point.payload['summary'])
                 )
+
+            self.logger.info("[DB PostgreSQL]: Insert done successfully")
 
 
         self.logger.info(f"[TERMINATION - EMBEDDING STAGE] Stopping...")        
