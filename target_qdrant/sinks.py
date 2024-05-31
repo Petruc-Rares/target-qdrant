@@ -138,6 +138,17 @@ class QdrantSink(BatchSink):
         Args:
             context: Stream partition or context dictionary.
         """
+
+        # necessary check because the Meltano SDK calls this method before clearing the sink
+        # so, if there are issues added to self.issues in process_record that did NOT yet reached the set batch size
+        # do the summarization step; otherwise, go directly to test for program ending 
+        if self.issues:
+            self.can_start_summarization.release()
+
+            self.logger.info(f"[TRIGGER - PROCESS BATCH], Batch Number={self.batch_idx}: Summarization Stage can start")
+
+            self.summarization_over.acquire()
+
         # VERY IMPORTANT: we provide only empty context
         # not empty context is provided when draining the sinks (indicating a possible final batch)
         # In that case, we should wait until all read records are also written to Qdrant
@@ -149,12 +160,6 @@ class QdrantSink(BatchSink):
             self.logger.info(f"[TERMINATION - PROCESS BATCH] Main thread stopping...")
 
             return
-
-        self.can_start_summarization.release()
-
-        self.logger.info(f"[TRIGGER - PROCESS BATCH], Batch Number={self.batch_idx}: Summarization Stage can start")
-
-        self.summarization_over.acquire()
 
         self.batch_idx += 1
 
@@ -278,4 +283,4 @@ class QdrantSink(BatchSink):
                 points=self.points
             )
 
-        self.logger.info(f"[TERMINATION - EMBEDDING STAGE] Stopping...")
+        self.logger.info(f"[TERMINATION - EMBEDDING STAGE] Stopping...")        
