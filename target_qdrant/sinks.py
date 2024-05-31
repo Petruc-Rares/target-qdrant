@@ -29,8 +29,6 @@ SUMMARY_MODEL = "Llama3 70B"
 class QdrantSink(BatchSink):
     """Qdrant target sink class."""
 
-    max_size = 10000  # Max records to write in one batch
-
     def __init__(
         self,
         target: Target,
@@ -41,6 +39,10 @@ class QdrantSink(BatchSink):
 
         super().__init__(target, stream_name, schema, key_properties)
         
+        # Overwriting the default behaviour of Meltano draining a sink when is full
+        # As we take care of it in process_record method
+        self.MAX_SIZE_DEFAULT = float('inf')
+
         self.batch_idx = 0
         # self.collection = self.config["collection"]
         self.collection = "test3_collection"
