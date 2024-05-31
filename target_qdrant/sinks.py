@@ -139,17 +139,9 @@ class QdrantSink(BatchSink):
         Args:
             context: Stream partition or context dictionary.
         """
-        self.logger.error(f"context: {context}")
-
-        self.can_start_summarization.release()
-
-        self.logger.info(f"[TRIGGER - PROCESS BATCH], Batch Number={self.batch_idx}: Summarization Stage can start")
-
-        self.summarization_over.acquire()
-
         # VERY IMPORTANT: we provide only empty context
-        # not empty context is provided when draining the sinks (indicating a final batch)
-        # in that case, we should wait until all read records are also written
+        # not empty context is provided when draining the sinks (indicating a possible final batch)
+        # In that case, we should wait until all read records are also written to Qdrant
         if context:
             while self.records_read_num != self.records_written_num:
                 self.logger.info(f"[TERMINATION - PROCESS BATCH] Can't end the program. Waiting for last batch: {self.batch_idx} to complete")
@@ -157,10 +149,13 @@ class QdrantSink(BatchSink):
             
             self.logger.info(f"[TERMINATION - PROCESS BATCH] Main thread stopping...")
 
-            # for stage in self.threads:
-                # stage.join()
+            return
 
-            # self.logger.info(f"[TERMINATION - PROCESS BATCH] No other message should follow this")
+        self.can_start_summarization.release()
+
+        self.logger.info(f"[TRIGGER - PROCESS BATCH], Batch Number={self.batch_idx}: Summarization Stage can start")
+
+        self.summarization_over.acquire()
 
         self.batch_idx += 1
 
