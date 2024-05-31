@@ -44,8 +44,7 @@ class QdrantSink(BatchSink):
         self.MAX_SIZE_DEFAULT = float('inf')
 
         self.batch_idx = 0
-        # self.collection = self.config["collection"]
-        self.collection = "test3_collection"
+        self.collection = self.config["collection"]
 
         endpoint = self.config["endpoint"]
         port = self.config["port"]
