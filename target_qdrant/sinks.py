@@ -107,7 +107,7 @@ class QdrantSink(BatchSink):
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS tap_jira.issues_ai_info (
                 issue_id integer PRIMARY KEY,
-                vector float[],
+                embedding float[],
                 summary text
             );
         """)
@@ -325,7 +325,7 @@ class QdrantSink(BatchSink):
                 # TODO: followed by the actual insert
                 self.cursor.execute(
                     """                    
-                        INSERT INTO tap_jira.issues_ai_info (issue_id, vector, summary)
+                        INSERT INTO tap_jira.issues_ai_info (issue_id, embedding, summary)
                         VALUES (%s, %s, %s);
                     """, (point.id, point.vector, point.payload['summary'])
                 )
