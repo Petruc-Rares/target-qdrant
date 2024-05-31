@@ -26,8 +26,8 @@ class TargetQdrant(Target):
         setup_mapper: bool = True,
     ) -> None:
         super().__init__(config=config, parse_env_config=parse_env_config, validate_config=validate_config, setup_mapper=setup_mapper)
-        # overwrite MAX_RECORD_AGE to 1 day
-        self._MAX_RECORD_AGE_IN_MINUTES = 1 * 24 * 60
+        # overwrite MAX_RECORD_AGE to 365 days (impossible to have a tap opened in practice for this long)
+        self._MAX_RECORD_AGE_IN_MINUTES = 365 * 24 * 60
 
     name = "target-qdrant"
 
