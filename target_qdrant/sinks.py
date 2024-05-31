@@ -320,7 +320,7 @@ class QdrantSink(BatchSink):
             for point in self.points:
                 self.cursor.execute(
                     """                    
-                        INSERT INTO tap_jira.issues_ai_info (id, vector, summary)
+                        INSERT INTO tap_jira.issues_ai_info (issue_id, vector, summary)
                         VALUES (%s, %s, %s);
                     """, (point.id, point.vector, point.payload['summary'])
                 )
