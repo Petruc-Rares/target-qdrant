@@ -14,13 +14,13 @@ plugins:
     - about
     - stream-maps
     - record-flattening
-    config:
-      start_date: '2010-01-01T00:00:00Z'
     settings:
-    # TODO: To configure using Meltano, declare settings and their types here:
-    - name: username
-    - name: password
-      kind: password
-      sensitive: true
-    - name: start_date
-      value: '2010-01-01T00:00:00Z'
+    - name: endpoint
+      kind: string
+      value: 'localhost'
+    - name: collection
+      kind: string
+      value: 'default'
+    - name: port
+      kind: integer
+      value: 6333
