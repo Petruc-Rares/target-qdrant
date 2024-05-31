@@ -29,7 +29,8 @@ class TargetQdrant(Target):
         # overwrite MAX_RECORD_AGE to 1 day
         self._MAX_RECORD_AGE_IN_MINUTES = 1 * 24 * 60
         #self.logger(f"sink info: {self.get_sink('issues_details')}")
-        self.logger(f"sink info 2: {self.get_sink('tap_jira-issues_details')}")
+        # self.logger(f"sink info 2: {self.get_sink('tap_jira-issues_details')}")
+        self.logger(f"sinks active: {self._sinks_active}")
 
     name = "target-qdrant"
 
