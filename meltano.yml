@@ -15,6 +15,7 @@ plugins:
     - stream-maps
     - record-flattening
     config:
-      endpoint: 'localhost'
-      collection: 'default'
-      port: 6333
+      start_date: '2010-01-01T00:00:00Z'
+    settings:
+      - name: start_date
+      value: '2010-01-01T00:00:00Z'
