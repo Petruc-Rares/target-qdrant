@@ -30,7 +30,8 @@ class TargetQdrant(Target):
         self._MAX_RECORD_AGE_IN_MINUTES = 1 * 24 * 60
         #self.logger(f"sink info: {self.get_sink('issues_details')}")
         # self.logger(f"sink info 2: {self.get_sink('tap_jira-issues_details')}")
-        self.logger.info(f"sinks active: {self._mapper}")
+        self.logger.info(f"map config: {self._mapper.map_config}")
+        self.logger.info(f"faker config: {self._mapper.faker_config}")
 
     name = "target-qdrant"
 
