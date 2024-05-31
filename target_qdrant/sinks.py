@@ -90,6 +90,7 @@ class QdrantSink(BatchSink):
 
         # PostgreSQL related variables
         # TODO: send them in form of dictionary via config
+        # TODO: I leave this as a TODO and don't implement it right away as I'm now confused on the way the configuration must be done when the custom target is added to a project
         self.conn = psql.connect(
             host="localhost",
             database="user",
@@ -100,6 +101,7 @@ class QdrantSink(BatchSink):
 
 
         self.logger.info(f"Autocommit is set to: {self.conn.autocommit}")
+        self.logger.info(f"Autocommit is set to: {self.conn.closed}")
 
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS tap_jira.issues_ai_info (
