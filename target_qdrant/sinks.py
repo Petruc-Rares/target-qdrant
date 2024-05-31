@@ -101,9 +101,6 @@ class QdrantSink(BatchSink):
 
 
     def process_record(self, record: dict, context: dict) -> None:
-
-        self.logger.error(f"context: {context}")
-
         """Process the record.
 
         Developers may optionally read or write additional markers within the
@@ -142,6 +139,7 @@ class QdrantSink(BatchSink):
         Args:
             context: Stream partition or context dictionary.
         """
+        self.logger.error(f"context: {context}")
 
         self.can_start_summarization.release()
 
