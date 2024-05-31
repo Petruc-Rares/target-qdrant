@@ -106,7 +106,7 @@ class QdrantSink(BatchSink):
 
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS tap_jira.issues_ai_info (
-                issue_id SERIAL PRIMARY KEY,
+                issue_id integer PRIMARY KEY,
                 vector float[],
                 summary text
             );
