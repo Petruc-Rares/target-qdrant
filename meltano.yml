@@ -24,3 +24,10 @@ plugins:
     - name: port
       kind: integer
       value: 6333
+    - name: batch_size
+      kind: integer
+      value: 100
+    - name: max_parallel_api_calls
+      kind: integer
+      value: 50
+
