@@ -22,7 +22,6 @@ from openai import OpenAIError
 openai.api_key = 'XYZ'
 openai.base_url = "https://devai.4psa.me/llm/v1/"
 
-MAX_PARALLEL_API_CALLS = 20
 EMBEDDING_MODEL ="Salesforce/SFR-Embedding-Mistral"
 SUMMARY_MODEL = "Llama3 70B" 
 
@@ -45,6 +44,9 @@ class QdrantSink(BatchSink):
 
         self.batch_idx = 0
         self.collection = self.config["collection"]
+
+        self.max_parallel_api_calls = self.config["max_parallel_api_calls"]
+        self.batch_size = self.config["batch_size"]
 
         endpoint = self.config["endpoint"]
         port = self.config["port"]
@@ -93,7 +95,7 @@ class QdrantSink(BatchSink):
         Args:
             context: Stream partition or context dictionary.
         """    
-        self.logger.info(f"[START - START BATCH]: Batch Number={self.batch_idx}, Summarized Points Number={self.batch_idx*MAX_PARALLEL_API_CALLS}")
+        self.logger.info(f"[START - START BATCH]: Batch Number={self.batch_idx}, Summarized Points Number={self.batch_idx*self.batch_size}")
 
         self.issues = []
 
@@ -127,7 +129,7 @@ class QdrantSink(BatchSink):
         self.records_read_num += 1
 
         #force flush the batch when number of parallel API calls reached:
-        if len(self.issues) >= MAX_PARALLEL_API_CALLS:
+        if len(self.issues) >= self.batch_size:
             self.process_batch(context=dict())
             self.start_batch(context=dict())
 
@@ -175,7 +177,7 @@ class QdrantSink(BatchSink):
             summarizer_inputs = [process_API_input(issue_info['summarizer_input']) for issue_info in self.issues]
 
             # parallel API calls for summarization
-            with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_PARALLEL_API_CALLS) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_parallel_api_calls) as executor:
                 futures = []
                 for summarizer_input in summarizer_inputs:
                     futures.append(executor.submit(openai.chat.completions.create, 
@@ -251,7 +253,7 @@ class QdrantSink(BatchSink):
             embedding_inputs = [issue_info['embedding_input'] for issue_info in issues_summarized]
 
             # API calls for embedding
-            with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_PARALLEL_API_CALLS) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_parallel_api_calls) as executor:
                 futures = []
                 for embedding_input in embedding_inputs:
                     futures.append(executor.submit(openai.embeddings.create, 

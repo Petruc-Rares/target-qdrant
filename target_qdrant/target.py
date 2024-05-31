@@ -38,6 +38,18 @@ class TargetQdrant(Target):
             description="Port Qdrant instance is listening to",
             required=True
         ),
+        th.Property(
+            "batch_size",
+            th.IntegerType,
+            description="Number of issues in a batch",
+            required=True
+        ),
+        th.Property(
+            "max_parallel_api_calls",
+            th.IntegerType,
+            description="Number of maximum parallel OpenAI calls that can be done in a stage at a time",
+            required=True
+        ),
     ).to_dict()
 
     default_sink_class = QdrantSink
