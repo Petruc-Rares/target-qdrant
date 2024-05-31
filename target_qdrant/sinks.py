@@ -101,6 +101,9 @@ class QdrantSink(BatchSink):
 
 
     def process_record(self, record: dict, context: dict) -> None:
+
+        self.logger.error(f"context: {context}")
+
         """Process the record.
 
         Developers may optionally read or write additional markers within the
