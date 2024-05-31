@@ -93,6 +93,7 @@ class QdrantSink(BatchSink):
         # TODO: I leave this as a TODO and don't implement it right away as I'm now confused on the way the configuration must be done when the custom target is added to a project
         self.conn = psql.connect(
             host="localhost",
+            port=5432,
             database="user",
             user="user",
             password="passwd"
