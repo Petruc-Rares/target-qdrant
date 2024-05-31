@@ -17,6 +17,8 @@ from qdrant_client.models import Distance, VectorParams
 from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.models import PointStruct
 
+import psycopg2 as psql
+
 from openai import OpenAIError
 
 openai.api_key = 'XYZ'
@@ -85,6 +87,29 @@ class QdrantSink(BatchSink):
         # program termination related variables
         self.records_read_num = 0
         self.records_written_num = 0
+
+        # PostgreSQL related variables
+        # TODO: send them in form of dictionary via config
+        self.conn = psql.connect(
+            host="localhost",
+            database="user",
+            user="user",
+            password="passwd"
+        )
+        self.cursor = self.conn.cursor()
+
+
+        self.logger.info(f"Autocommit is set to: {self.conn.autocommit}")
+
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS tap_jira.issues_ai_info (
+                issue_id SERIAL PRIMARY KEY,
+                vector float[],
+                summary text
+            );
+        """)
+
+        
 
     def start_batch(self, context: dict) -> None:
         """Start a batch.
@@ -160,6 +185,10 @@ class QdrantSink(BatchSink):
                 time.sleep(10)
             
             self.logger.info(f"[TERMINATION - PROCESS BATCH] Main thread stopping...")
+
+            # Closing PostgreSQL connection related objects
+            self.cursor.close()
+            self.conn.close()
 
             return
 
@@ -284,5 +313,15 @@ class QdrantSink(BatchSink):
                 wait=True,
                 points=self.points
             )
+
+            # insert to PostgreSQL AI generated data to be used if needed for other use cases
+            for point in self.points:
+                self.cursor.execute(
+                    """                    
+                        INSERT INTO issues (id, vector, summary)
+                        VALUES (%s, %s, %s);
+                    """, (point.id, point.vector, point.payload['summary'])
+                )
+
 
         self.logger.info(f"[TERMINATION - EMBEDDING STAGE] Stopping...")        
