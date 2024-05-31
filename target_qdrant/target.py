@@ -24,21 +24,18 @@ class TargetQdrant(Target):
             "endpoint",
             th.StringType,
             description="The endpoint of the Qdrant instance",
-            default="localhost",
             required=True
         ),
         th.Property(
             "collection",
             th.StringType,
             description="Collection to insert data into",
-            default="jira_issues",
             required=True
         ),
         th.Property(
             "port",
             th.IntegerType,
             description="Port Qdrant instance is listening to",
-            default=6333,
             required=True
         ),
     ).to_dict()
