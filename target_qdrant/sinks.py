@@ -100,10 +100,6 @@ class QdrantSink(BatchSink):
         )
         self.cursor = self.conn.cursor()
 
-
-        self.logger.info(f"Autocommit is set to: {self.conn.autocommit}")
-        self.logger.info(f"Autocommit is set to: {self.conn.closed}")
-
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS tap_jira.issues_ai_info (
                 issue_id integer PRIMARY KEY,
@@ -112,7 +108,6 @@ class QdrantSink(BatchSink):
             );
         """)
 
-        
 
     def start_batch(self, context: dict) -> None:
         """Start a batch.
@@ -184,7 +179,9 @@ class QdrantSink(BatchSink):
         # In that case, we should wait until all read records are also written to Qdrant
         if context:
             while self.records_read_num != self.records_written_num:
-                self.logger.info(f"[TERMINATION - PROCESS BATCH] Can't end the program. Waiting for last batch: {self.batch_idx} to complete")
+                last_batch_idx = self.batch_idx - 1 if self.records_read_num % self.batch_size == 0 else self.batch_idx
+
+                self.logger.info(f"[TERMINATION - PROCESS BATCH] Can't end the program. Waiting for last batch: {last_batch_idx} to complete")
                 time.sleep(10)
             
             self.logger.info(f"[TERMINATION - PROCESS BATCH] Main thread stopping...")
@@ -319,16 +316,13 @@ class QdrantSink(BatchSink):
 
             self.logger.info("[DB QDRANT]: Insert done successfully")
 
-            # insert to PostgreSQL AI generated data to be used if needed for other use cases
-            for point in self.points:
-                # TODO: This for will be transformed in multiple values being concatenated
-                # TODO: followed by the actual insert
-                self.cursor.execute(
-                    """                    
-                        INSERT INTO tap_jira.issues_ai_info (issue_id, embedding, summary)
-                        VALUES (%s, %s, %s);
-                    """, (point.id, point.vector, point.payload['summary'])
-                )
+            issues_ai_info = [(point.id, point.vector, point.payload['summary']) for point in self.points]
+            placeholders = ', '.join(['%s'] * len(issues_ai_info[0]))
+
+            args_str = ', '.join(self.cursor.mogrify(f"({placeholders})", issue_ai_info).decode("utf-8") for issue_ai_info in issues_ai_info)
+            query = "INSERT INTO tap_jira.issues_ai_info VALUES " + args_str
+
+            self.cursor.execute(query)
 
             self.conn.commit()
 
