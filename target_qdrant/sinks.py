@@ -332,7 +332,7 @@ class QdrantSink(BatchSink):
 
             self.cursor.execute(
                 query,
-                [item for issue_ai_info in issues_ai_info for item in issue_ai_info]
+                issues_ai_info
             )
 
             self.conn.commit()
