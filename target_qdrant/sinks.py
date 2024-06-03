@@ -324,10 +324,13 @@ class QdrantSink(BatchSink):
             issues_ai_info = [(point.id, point.vector, point.payload['summary']) for point in self.points]
             placeholders = ', '.join(['%s'] * len(issues_ai_info[0]))
 
-            query = """
+
+            args_str = ', '.join(self.cursor.mogrify(f"({placeholders})", issue_ai_info) for issue_ai_info in issues_ai_info)
+
+            query = f"""
                 INSERT INTO tap_jira.issues_ai_info (issue_id, embedding, summary)
-                VALUES ({});
-            """.format(', '.join(['({})'.format(placeholders)] * len(issues_ai_info)))
+                VALUES {args_str}
+            """
 
             self.logger.info(f"Query to execute: {query}")
 
