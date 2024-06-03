@@ -98,12 +98,12 @@ class QdrantSink(BatchSink):
             user="user",
             password="passwd"
         )
-        self.conn.autocommit = True
+        self.conn.autocommit = False
         self.cursor = self.conn.cursor()
 
 
-        self.logger.info(f"Autocommit is set to: {self.conn.autocommit}")
-        self.logger.info(f"Autocommit is set to: {self.conn.closed}")
+        # self.logger.info(f"Autocommit is set to: {self.conn.autocommit}")
+        # self.logger.info(f"Autocommit is set to: {self.conn.closed}")
 
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS tap_jira.issues_ai_info (
