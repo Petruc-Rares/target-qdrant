@@ -328,7 +328,7 @@ class QdrantSink(BatchSink):
                 VALUES ({});
             """.format(', '.join('({})'.format(placeholders) * len(issues_ai_info)))
 
-            self.cusor.execute(
+            self.cursor.execute(
                 query,
                 [item for issue_ai_info in issues_ai_info for item in issue_ai_info]
             )
