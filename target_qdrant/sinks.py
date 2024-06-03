@@ -98,6 +98,7 @@ class QdrantSink(BatchSink):
             user="user",
             password="passwd"
         )
+        self.conn.autocommit = True
         self.cursor = self.conn.cursor()
 
 
