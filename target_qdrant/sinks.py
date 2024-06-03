@@ -320,7 +320,7 @@ class QdrantSink(BatchSink):
             placeholders = ', '.join(['%s'] * len(issues_ai_info[0]))
 
             args_str = ', '.join(self.cursor.mogrify(f"({placeholders})", issue_ai_info).decode("utf-8") for issue_ai_info in issues_ai_info)
-            query = "INSERT INTO tap_jira.issues_ai_info VALUES" + args_str
+            query = "INSERT INTO tap_jira.issues_ai_info VALUES " + args_str
 
             self.cursor.execute(query)
 
