@@ -319,16 +319,19 @@ class QdrantSink(BatchSink):
 
             self.logger.info("[DB QDRANT]: Insert done successfully")
 
-            # insert to PostgreSQL AI generated data to be used if needed for other use cases
-            for point in self.points:
-                # TODO: This for will be transformed in multiple values being concatenated
-                # TODO: followed by the actual insert
-                self.cursor.execute(
-                    """                    
-                        INSERT INTO tap_jira.issues_ai_info (issue_id, embedding, summary)
-                        VALUES (%s, %s, %s);
-                    """, (point.id, point.vector, point.payload['summary'])
-                )
+
+            issues_ai_info = [(point.id, point.vector, point.payload['summary']) for point in self.points]
+            placeholders = ', '.join(['%s'] * len(issues_ai_info[0]))
+
+            query = """
+                INSERT INTO tap_jira.issues_ai_info (issue_id, embedding, summary)
+                VALUES ({});
+            """.format(', '.join('({})'.format(placeholders) * len(issues_ai_info)))
+
+            self.cusor.execute(
+                query,
+                [item for issue_ai_info in issues_ai_info for item in issue_ai_info]
+            )
 
             self.conn.commit()
 
