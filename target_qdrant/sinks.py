@@ -98,14 +98,7 @@ class QdrantSink(BatchSink):
             user="user",
             password="passwd"
         )
-        self.conn.autocommit = False
         self.cursor = self.conn.cursor()
-
-
-        self.logger.info(f"Autocommit is set to: {self.conn.autocommit}")
-        self.logger.info(f"Autocommit is set to: {self.conn.closed}")
-
-        self.logger.info(f"Before table creation")
 
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS tap_jira.issues_ai_info (
@@ -115,11 +108,6 @@ class QdrantSink(BatchSink):
             );
         """)
 
-        self.conn.commit()
-
-        self.logger.info(f"After table creation")
-
-        
 
     def start_batch(self, context: dict) -> None:
         """Start a batch.
@@ -326,27 +314,13 @@ class QdrantSink(BatchSink):
 
             self.logger.info("[DB QDRANT]: Insert done successfully")
 
-
             issues_ai_info = [(point.id, point.vector, point.payload['summary']) for point in self.points]
             placeholders = ', '.join(['%s'] * len(issues_ai_info[0]))
 
+            args_str = ', '.join(self.cursor.mogrify(f"({placeholders})", issue_ai_info).decode("utf-8") for issue_ai_info in issues_ai_info)
+            query = "INSERT INTO tap_jira.issues_ai_info VALUES" + args_str
 
-            args_str = ', '.join(self.cursor.mogrify(f"({placeholders})", issue_ai_info) for issue_ai_info in issues_ai_info)
-
-            query = """
-                INSERT INTO tap_jira.issues_ai_info (issue_id, embedding, summary)
-                VALUES 
-            """ + args_str
-
-            self.logger.info(f"Query to execute: {query}")
-
-            self.logger.info(f"Data to insert length: {len(issues_ai_info)}")
-            self.logger.info(f"Actual Data to insert length: {len(issues_ai_info[0])}")
-
-            self.cursor.execute(
-                query,
-                issues_ai_info
-            )
+            self.cursor.execute(query)
 
             self.conn.commit()
 
