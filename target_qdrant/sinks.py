@@ -330,6 +330,8 @@ class QdrantSink(BatchSink):
 
             self.logger.info(f"Query to execute: {query}")
 
+            self.logger.info(f"Data to insert: {issues_ai_info}")
+
             self.cursor.execute(
                 query,
                 issues_ai_info
