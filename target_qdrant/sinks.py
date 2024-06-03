@@ -326,7 +326,7 @@ class QdrantSink(BatchSink):
             query = """
                 INSERT INTO tap_jira.issues_ai_info (issue_id, embedding, summary)
                 VALUES ({});
-            """.format(', '.join('({})'.format(placeholders) * len(issues_ai_info[0])))
+            """.format(', '.join(['({})'.format(placeholders)] * len(issues_ai_info[0])))
 
             self.logger.info(f"Query to execute: {query}")
 
