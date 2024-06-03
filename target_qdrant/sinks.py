@@ -179,7 +179,9 @@ class QdrantSink(BatchSink):
         # In that case, we should wait until all read records are also written to Qdrant
         if context:
             while self.records_read_num != self.records_written_num:
-                self.logger.info(f"[TERMINATION - PROCESS BATCH] Can't end the program. Waiting for last batch: {self.batch_idx} to complete")
+                last_batch_idx = self.batch_idx - 1 if self.records_read_num % self.batch_size == 0 else self.batch_idx
+
+                self.logger.info(f"[TERMINATION - PROCESS BATCH] Can't end the program. Waiting for last batch: {last_batch_idx} to complete")
                 time.sleep(10)
             
             self.logger.info(f"[TERMINATION - PROCESS BATCH] Main thread stopping...")
