@@ -115,6 +115,8 @@ class QdrantSink(BatchSink):
             );
         """)
 
+        self.conn.commit()
+
         self.logger.info(f"After table creation")
 
         
