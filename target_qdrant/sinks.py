@@ -304,7 +304,7 @@ class QdrantSink(BatchSink):
                 results = []
 
                 for idx, future in enumerate(futures):
-                    words_to_trim = 16
+                    words_to_trim = 2
                     words_to_trim_multiplier = 1.2
     
                     while True:
@@ -325,7 +325,7 @@ class QdrantSink(BatchSink):
 
                                 self.logger.info(f"After trimming, embedding input has {len(content.split())} words")
                             
-                                words_to_trim *= words_to_trim_multiplier
+                                words_to_trim = int(words_to_trim * words_to_trim_multiplier)
 
                                 future = executor.submit(openai.embeddings.create, 
                                                 model=EMBEDDING_MODEL, 
