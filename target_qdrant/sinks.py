@@ -246,7 +246,10 @@ class QdrantSink(BatchSink):
                                                             messages=[process_API_input(content)])
                                 
                                 summarizer_inputs[idx]["content"] = content
-                
+                            else:
+                                self.logger.warning(f"[ERROR - EMBEDDING STAGE]: For issue key = {issues_summarized[idx]['record']['key']}, we got error message:\n\n\n {e.message}")
+                                raise
+
                 issues_summaries = [result.choices[0].message.content for result in results]
 
                 for issue, summary in zip(self.issues, issues_summaries):
@@ -289,7 +292,40 @@ class QdrantSink(BatchSink):
                                                 model=EMBEDDING_MODEL, 
                                                 input=[embedding_input]))
 
-                results = [future.result() for future in futures]
+                results = []
+
+                for idx, future in enumerate(futures):
+                    words_to_trim = 16
+                    words_to_trim_multiplier = 1.2
+    
+                    while True:
+                        try:
+                            result = future.result()
+                            results.append(result)
+                            break
+                        except OpenAIError as e:
+                            if e.code == 403:
+                                self.logger.warning(f"[ERROR - EMBEDDING STAGE]: {e.message}")
+                                
+                                content = embedding_inputs[idx]
+                                
+                                self.logger.info(f"Before trimming, embedding input had {len(content.split())} words")
+
+                                content = ' '.join(content.split()[:-words_to_trim])
+
+                                self.logger.info(f"After trimming, embedding input has {len(content.split())} words")
+                            
+                                words_to_trim *= words_to_trim_multiplier
+
+                                future = executor.submit(openai.embeddings.create, 
+                                                model=EMBEDDING_MODEL, 
+                                                input=[embedding_input])
+                                
+                                embedding_inputs[idx] = content
+                            else:
+                                self.logger.warning(f"[ERROR - EMBEDDING STAGE]: For issue key = {issues_summarized[idx]['record']['key']}, we got error message:\n\n\n {e.message}")
+                                raise
+
                 issues_embeddings = [result.data[0].embedding for result in results]
 
             self.logger.info(f"[API - EMBEDDING STAGE], Batch Number={batch_idx}: API calls finished successfully")
