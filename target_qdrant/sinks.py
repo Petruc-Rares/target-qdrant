@@ -238,7 +238,7 @@ class QdrantSink(BatchSink):
                         except OpenAIError as e:
                             self.logger.error(f"[ERROR - SUMMARIZATION STAGE]: For issue key = {self.issues[idx]['record']['issue_key']}, we got error message:\n\n\n {e.message}")
                             
-                            if e.code == 400:
+                            if e.code == 400 or '413 Request Entity Too Large' in e.message:
                                 content = summarizer_inputs[idx]["content"]
 
                                 words_to_trim = int(tokens_to_trim * token_to_words)
