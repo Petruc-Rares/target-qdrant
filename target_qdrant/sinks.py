@@ -366,7 +366,7 @@ class QdrantSink(BatchSink):
             issues_ai_info = [(point.id, point.vector, point.payload['summary']) for point in self.points]
             
             delete_placeholders = ', '.join(['%s'] * len(issues_ai_info))
-            delete_query = "DELETE FROM tap_jira.issues_ai_info WHERE id IN ({})".format(delete_placeholders)
+            delete_query = "DELETE FROM tap_jira.issues_ai_info WHERE issue_id IN ({})".format(delete_placeholders)
             self.cursor.execute(delete_query, [point[0] for point in issues_ai_info])
 
             insert_placeholders = ', '.join(['%s'] * len(issues_ai_info[0]))
