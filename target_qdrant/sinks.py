@@ -315,7 +315,8 @@ class QdrantSink(BatchSink):
                         except OpenAIError as e:
                             self.logger.error(f"[ERROR - EMBEDDING STAGE]: For issue key = {issues_summarized[idx]['record']['issue_key']}, we got error message:\n\n\n {e.message}")
 
-                            if e.code == 413:                                
+                            # for 413 error code e.code does return None so an alternative was necessary to identify the scenario
+                            if '413 Request Entity Too Large' in e.message:                                
                                 content = embedding_inputs[idx]
                                 
                                 self.logger.info(f"Before trimming, embedding input had {len(content.split())} words")
