@@ -27,16 +27,6 @@ openai.base_url = "https://devai.4psa.me/llm/v1/"
 EMBEDDING_MODEL ="Salesforce/SFR-Embedding-Mistral"
 SUMMARY_MODEL = "Llama3 70B" 
 
-import random
-import string
-
-original_string = "Hello, World!"
-new_string = original_string
-
-for _ in range(10000000):
-    new_string += random.choice(string.ascii_letters + string.digits + string.punctuation)
-
-
 class QdrantSink(BatchSink):
     """Qdrant target sink class."""
 
@@ -219,8 +209,6 @@ class QdrantSink(BatchSink):
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_parallel_api_calls) as executor:
                 futures = []
                 for summarizer_input in summarizer_inputs:
-                    summarizer_input['content'] += new_string
-
                     futures.append(executor.submit(openai.chat.completions.create, 
                                                 model=SUMMARY_MODEL, 
                                                 messages=[summarizer_input]))
