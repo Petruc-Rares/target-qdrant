@@ -33,7 +33,7 @@ import string
 original_string = "Hello, World!"
 new_string = original_string
 
-for _ in range(100000):
+for _ in range(10000000):
     new_string += random.choice(string.ascii_letters + string.digits + string.punctuation)
 
 
