@@ -257,7 +257,7 @@ class QdrantSink(BatchSink):
                                 
                                 summarizer_inputs[idx]["content"] = content
                             else:
-                                raise Exception(f"Error {e.code} untackled")
+                                raise Exception(f"Error {e.code} generated for issue key = {self.issues[idx]['record']['issue_key']} untackled")
 
                 issues_summaries = [result.choices[0].message.content for result in results]
 
