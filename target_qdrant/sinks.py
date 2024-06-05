@@ -206,7 +206,7 @@ class QdrantSink(BatchSink):
 
     def summarize(self):
         def process_API_input(content):
-            return {"role": "user", "content": content}
+            return {"role": "user", "content2": content}
 
         while True:
             self.can_start_summarization.acquire()
@@ -291,7 +291,7 @@ class QdrantSink(BatchSink):
 
             self.logger.info(f"[TRIGGER - EMBEDDING STAGE], Batch Number={batch_idx}: Summary information locally saved")
 
-            embedding_inputs = [issue_info['embedding_input'] + new_string for issue_info in issues_summarized]
+            embedding_inputs = [issue_info['embedding_input'] for issue_info in issues_summarized]
 
             # API calls for embedding
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_parallel_api_calls) as executor:
