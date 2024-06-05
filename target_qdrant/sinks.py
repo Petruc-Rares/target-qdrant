@@ -315,7 +315,7 @@ class QdrantSink(BatchSink):
                         except OpenAIError as e:
                             self.logger.error(f"[ERROR - EMBEDDING STAGE]: For issue key = {issues_summarized[idx]['record']['issue_key']}, we got error message:\n\n\n {e.message}")
 
-                            if e.code == 403:                                
+                            if e.code == 413:                                
                                 content = embedding_inputs[idx]
                                 
                                 self.logger.info(f"Before trimming, embedding input had {len(content.split())} words")
@@ -332,7 +332,7 @@ class QdrantSink(BatchSink):
                                 
                                 embedding_inputs[idx] = content
                             else:
-                                raise Exception(f"Error {e.code} untackled")
+                                raise Exception(f"Error {e.code} generated for issue key = {issues_summarized[idx]['record']['issue_key']} untackled")
 
                 issues_embeddings = [result.data[0].embedding for result in results]
 
