@@ -206,7 +206,7 @@ class QdrantSink(BatchSink):
 
     def summarize(self):
         def process_API_input(content):
-            return {"role": "user", "content": content+new_string}
+            return {"role": "user", "content": content}
 
         while True:
             self.can_start_summarization.acquire()
@@ -219,6 +219,8 @@ class QdrantSink(BatchSink):
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_parallel_api_calls) as executor:
                 futures = []
                 for summarizer_input in summarizer_inputs:
+                    summarizer_input['content'] += new_string
+
                     futures.append(executor.submit(openai.chat.completions.create, 
                                                 model=SUMMARY_MODEL, 
                                                 messages=[summarizer_input]))
