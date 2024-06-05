@@ -27,6 +27,16 @@ openai.base_url = "https://devai.4psa.me/llm/v1/"
 EMBEDDING_MODEL ="Salesforce/SFR-Embedding-Mistral"
 SUMMARY_MODEL = "Llama3 70B" 
 
+import random
+import string
+
+original_string = "Hello, World!"
+new_string = original_string
+
+for _ in range(100000):
+    new_string += random.choice(string.ascii_letters + string.digits + string.punctuation)
+
+
 class QdrantSink(BatchSink):
     """Qdrant target sink class."""
 
@@ -196,7 +206,7 @@ class QdrantSink(BatchSink):
 
     def summarize(self):
         def process_API_input(content):
-            return {"role": "user", "content2": content}
+            return {"role": "user", "content": content}
 
         while True:
             self.can_start_summarization.acquire()
@@ -247,7 +257,7 @@ class QdrantSink(BatchSink):
                                 
                                 summarizer_inputs[idx]["content"] = content
                             else:
-                                raise
+                                raise Exception(f"Error {e.code} untackled")
 
                 issues_summaries = [result.choices[0].message.content for result in results]
 
@@ -281,7 +291,7 @@ class QdrantSink(BatchSink):
 
             self.logger.info(f"[TRIGGER - EMBEDDING STAGE], Batch Number={batch_idx}: Summary information locally saved")
 
-            embedding_inputs = [issue_info['embedding_input'] for issue_info in issues_summarized]
+            embedding_inputs = [issue_info['embedding_input'] + new_string for issue_info in issues_summarized]
 
             # API calls for embedding
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_parallel_api_calls) as executor:
@@ -322,7 +332,7 @@ class QdrantSink(BatchSink):
                                 
                                 embedding_inputs[idx] = content
                             else:
-                                raise
+                                raise Exception(f"Error {e.code} untackled")
 
                 issues_embeddings = [result.data[0].embedding for result in results]
 
