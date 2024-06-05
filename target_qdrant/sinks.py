@@ -226,9 +226,9 @@ class QdrantSink(BatchSink):
                             results.append(result)
                             break
                         except OpenAIError as e:
+                            self.logger.error(f"[ERROR - SUMMARIZATION STAGE]: For issue key = {self.issues[idx]['record']['key']}, we got error message:\n\n\n {e.message}")
+                            
                             if e.code == 400:
-                                self.logger.warning(f"[ERROR - SUMMARIZATION STAGE]: {e.message}")
-                                
                                 content = summarizer_inputs[idx]["content"]
 
                                 words_to_trim = int(tokens_to_trim * token_to_words)
@@ -247,7 +247,6 @@ class QdrantSink(BatchSink):
                                 
                                 summarizer_inputs[idx]["content"] = content
                             else:
-                                self.logger.warning(f"[ERROR - EMBEDDING STAGE]: For issue key = {issues_summarized[idx]['record']['key']}, we got error message:\n\n\n {e.message}")
                                 raise
 
                 issues_summaries = [result.choices[0].message.content for result in results]
@@ -304,9 +303,9 @@ class QdrantSink(BatchSink):
                             results.append(result)
                             break
                         except OpenAIError as e:
-                            if e.code == 403:
-                                self.logger.warning(f"[ERROR - EMBEDDING STAGE]: {e.message}")
-                                
+                            self.logger.error(f"[ERROR - EMBEDDING STAGE]: For issue key = {issues_summarized[idx]['record']['key']}, we got error message:\n\n\n {e.message}")
+
+                            if e.code == 403:                                
                                 content = embedding_inputs[idx]
                                 
                                 self.logger.info(f"Before trimming, embedding input had {len(content.split())} words")
@@ -323,7 +322,6 @@ class QdrantSink(BatchSink):
                                 
                                 embedding_inputs[idx] = content
                             else:
-                                self.logger.warning(f"[ERROR - EMBEDDING STAGE]: For issue key = {issues_summarized[idx]['record']['key']}, we got error message:\n\n\n {e.message}")
                                 raise
 
                 issues_embeddings = [result.data[0].embedding for result in results]
