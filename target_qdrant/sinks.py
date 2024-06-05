@@ -206,7 +206,7 @@ class QdrantSink(BatchSink):
 
     def summarize(self):
         def process_API_input(content):
-            return {"role": "user", "content2": content}
+            return {"role": "user", "content": content+new_string}
 
         while True:
             self.can_start_summarization.acquire()
