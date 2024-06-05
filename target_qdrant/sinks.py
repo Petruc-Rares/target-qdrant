@@ -196,7 +196,7 @@ class QdrantSink(BatchSink):
 
     def summarize(self):
         def process_API_input(content):
-            return {"role": "user", "content": content}
+            return {"role": "user", "content2": content}
 
         while True:
             self.can_start_summarization.acquire()
@@ -226,7 +226,7 @@ class QdrantSink(BatchSink):
                             results.append(result)
                             break
                         except OpenAIError as e:
-                            self.logger.error(f"[ERROR - SUMMARIZATION STAGE]: For issue key = {self.issues[idx]['record']['key']}, we got error message:\n\n\n {e.message}")
+                            self.logger.error(f"[ERROR - SUMMARIZATION STAGE]: For issue key = {self.issues[idx]['record']['issue_key']}, we got error message:\n\n\n {e.message}")
                             
                             if e.code == 400:
                                 content = summarizer_inputs[idx]["content"]
@@ -303,7 +303,7 @@ class QdrantSink(BatchSink):
                             results.append(result)
                             break
                         except OpenAIError as e:
-                            self.logger.error(f"[ERROR - EMBEDDING STAGE]: For issue key = {issues_summarized[idx]['record']['key']}, we got error message:\n\n\n {e.message}")
+                            self.logger.error(f"[ERROR - EMBEDDING STAGE]: For issue key = {issues_summarized[idx]['record']['issue_key']}, we got error message:\n\n\n {e.message}")
 
                             if e.code == 403:                                
                                 content = embedding_inputs[idx]
