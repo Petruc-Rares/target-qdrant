@@ -24,7 +24,7 @@ from openai import OpenAIError
 openai.api_key = 'XYZ'
 openai.base_url = "https://devai.4psa.me/llm/v1/"
 
-EMBEDDING_MODEL ="SFR-Embedding-Mistral"
+EMBEDDING_MODEL ="SFR Embedding Mistral"
 SUMMARY_MODEL = "Llama3 70B" 
 
 class QdrantSink(BatchSink):
