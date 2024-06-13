@@ -287,6 +287,9 @@ class QdrantSink(BatchSink):
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_parallel_api_calls) as executor:
                 futures = []
                 for embedding_input in embedding_inputs:
+                    self.logger.info(f"Embedding input: {embedding_input}")
+
+
                     futures.append(executor.submit(openai.embeddings.create, 
                                                 model=EMBEDDING_MODEL, 
                                                 input=[embedding_input]))
