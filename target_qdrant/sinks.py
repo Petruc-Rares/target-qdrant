@@ -211,8 +211,7 @@ class QdrantSink(BatchSink):
                 for summarizer_input in summarizer_inputs:
                     futures.append(executor.submit(openai.chat.completions.create, 
                                                 model=SUMMARY_MODEL, 
-                                                messages=[summarizer_input],
-                                                encoding_format="float"))
+                                                messages=[summarizer_input]))
 
                 results = []
 
@@ -290,7 +289,8 @@ class QdrantSink(BatchSink):
                 for embedding_input in embedding_inputs:
                     futures.append(executor.submit(openai.embeddings.create, 
                                                 model=EMBEDDING_MODEL, 
-                                                input=[embedding_input]))
+                                                input=[embedding_input],
+                                                encoding_format="float"))
 
                 results = []
 
