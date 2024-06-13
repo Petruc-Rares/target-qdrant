@@ -24,7 +24,7 @@ from openai import OpenAIError
 openai.api_key = 'XYZ'
 openai.base_url = "https://devai.4psa.me/llm/v1/"
 
-EMBEDDING_MODEL ="Salesforce/SFR-Embedding-Mistral"
+EMBEDDING_MODEL ="SFR-Embedding-Mistral"
 SUMMARY_MODEL = "Llama3 70B" 
 
 class QdrantSink(BatchSink):
@@ -287,9 +287,6 @@ class QdrantSink(BatchSink):
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_parallel_api_calls) as executor:
                 futures = []
                 for embedding_input in embedding_inputs:
-                    self.logger.info(f"Embedding input: {embedding_input}")
-
-
                     futures.append(executor.submit(openai.embeddings.create, 
                                                 model=EMBEDDING_MODEL, 
                                                 input=[embedding_input]))
