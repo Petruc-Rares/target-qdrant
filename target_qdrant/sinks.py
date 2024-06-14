@@ -320,7 +320,8 @@ class QdrantSink(BatchSink):
 
                                 future = executor.submit(openai.embeddings.create, 
                                                 model=EMBEDDING_MODEL, 
-                                                input=[content])
+                                                input=[content],
+                                                encoding_format="float")
                                 
                                 embedding_inputs[idx] = content
                             else:
