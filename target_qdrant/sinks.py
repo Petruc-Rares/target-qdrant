@@ -8,6 +8,7 @@ import concurrent
 import threading
 import copy
 import time
+import os
 
 from singer_sdk.sinks import BatchSink
 from singer_sdk.target_base import Target
@@ -24,7 +25,7 @@ from openai import OpenAIError
 openai.api_key = 'XYZ'
 openai.base_url = "https://devai.4psa.me/llm/v1/"
 
-EMBEDDING_MODEL ="SFR Embedding Mistral"
+EMBEDDING_MODEL = os.environ['EMBEDDING_MODEL']
 SUMMARY_MODEL = "Llama3 70B" 
 
 class QdrantSink(BatchSink):
@@ -134,6 +135,9 @@ class QdrantSink(BatchSink):
             record: Individual record in the stream.
             context: Stream partition or context dictionary.
         """
+
+        self.logger.info(f"EMBEDDING_MODEL: {EMBEDDING_MODEL}")
+        exit(2)
 
         issue_info = {
             'embedding_input': record['embedding_input'],
