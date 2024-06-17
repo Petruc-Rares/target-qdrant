@@ -107,7 +107,7 @@ class QdrantSink(BatchSink):
         self.cursor = self.conn.cursor()
 
         self.cursor.execute("""
-            CREATE TABLE IF NOT EXISTS tap_jira.issues_ai_info (
+            CREATE TABLE IF NOT EXISTS tap_jira.issues_ai_info_test (
                 issue_id integer PRIMARY KEY,
                 embedding float[],
                 summary text
@@ -362,12 +362,12 @@ class QdrantSink(BatchSink):
             issues_ai_info = [(point.id, point.vector, point.payload['summary']) for point in self.points]
             
             delete_placeholders = ', '.join(['%s'] * len(issues_ai_info))
-            delete_query = "DELETE FROM tap_jira.issues_ai_info WHERE issue_id IN ({})".format(delete_placeholders)
+            delete_query = "DELETE FROM tap_jira.issues_ai_info_test WHERE issue_id IN ({})".format(delete_placeholders)
             self.cursor.execute(delete_query, [point[0] for point in issues_ai_info])
 
             insert_placeholders = ', '.join(['%s'] * len(issues_ai_info[0]))
             insert_args_str = ', '.join(self.cursor.mogrify(f"({insert_placeholders})", issue_ai_info).decode("utf-8") for issue_ai_info in issues_ai_info)
-            insert_query = "INSERT INTO tap_jira.issues_ai_info VALUES " + insert_args_str
+            insert_query = "INSERT INTO tap_jira.issues_ai_info_test VALUES " + insert_args_str
 
             self.cursor.execute(insert_query)
 
