@@ -56,7 +56,7 @@ class QdrantSink(BatchSink):
         self.qdrant_client = QdrantClient(url=endpoint, port=port)
 
         try:
-            vector_size = 1024 if EMBEDDING_MODEL == 'BAAI/bge-large-en-v1.5' else 'SFR Embedding Mistral'
+            vector_size = 1024 if EMBEDDING_MODEL == 'BAAI/bge-large-en-v1.5' else 4096
 
             self.qdrant_client.create_collection(
                 collection_name=self.collection,
