@@ -56,15 +56,20 @@ class QdrantSink(BatchSink):
         self.qdrant_client = QdrantClient(url=endpoint, port=port)
 
         try:
+            vector_size = 1024 if EMBEDDING_MODEL == 'BAAI/bge-large-en-v1.5' else 'SFR Embedding Mistral'
+
             self.qdrant_client.create_collection(
                 collection_name=self.collection,
-                vectors_config=VectorParams(size=4096, distance=Distance.EUCLID),
+                vectors_config=VectorParams(size=vector_size, distance=Distance.EUCLID),
             )
 
             self.logger.info(f"Created collection {self.collection} successfully!")
         except UnexpectedResponse as e:
             if e.status_code == 409:
-                self.logger.info(f"Collection {self.collection} already exists. Did NOT overwrite it!")
+                # TODO: Maybe in future you could allow program to continue, if the vector size of the collection
+                # TODO: is equal to the inserted one
+                self.logger.info(f"Collection {self.collection} already exists. No overriding is done!")
+                exit(1)
                 # handle the error
             else:
                 raise  # re-raise the error if it's not a 409
@@ -120,9 +125,6 @@ class QdrantSink(BatchSink):
             context: Stream partition or context dictionary.
         """    
         self.logger.info(f"[START - START BATCH]: Batch Number={self.batch_idx}, Summarized Points Number={self.batch_idx*self.batch_size}")
-
-        self.logger.info(f"EMBEDDING_MODEL: {EMBEDDING_MODEL}")
-        exit(2)
 
         self.issues = []
 
@@ -215,7 +217,9 @@ class QdrantSink(BatchSink):
                 for summarizer_input in summarizer_inputs:
                     futures.append(executor.submit(openai.chat.completions.create, 
                                                 model=SUMMARY_MODEL, 
-                                                messages=[summarizer_input]))
+                                                messages=[summarizer_input],
+                                                encoding_format="float" if EMBEDDING_MODEL == "SFR Embedding Mistral" else None
+                                                ))
 
                 results = []
 
@@ -247,7 +251,8 @@ class QdrantSink(BatchSink):
 
                                 future = executor.submit(openai.chat.completions.create, 
                                                             model=SUMMARY_MODEL, 
-                                                            messages=[process_API_input(content)])
+                                                            messages=[process_API_input(content)],
+                                                            encoding_format="float" if EMBEDDING_MODEL == "SFR Embedding Mistral" else None)
                                 
                                 summarizer_inputs[idx]["content"] = content
                             else:
@@ -311,7 +316,7 @@ class QdrantSink(BatchSink):
                             self.logger.error(f"[ERROR - EMBEDDING STAGE]: For issue key = {issues_summarized[idx]['record']['issue_key']}, we got error message:\n\n\n {e.message}")
 
                             # for 413 error code e.code does return None so an alternative was necessary to identify the scenario
-                            if '413 Request Entity Too Large' in e.message:                                
+                            if e.code == 413 or '413 Request Entity Too Large' in e.message:                                
                                 content = embedding_inputs[idx]
                                 
                                 self.logger.info(f"Before trimming, embedding input had {len(content.split())} words")
