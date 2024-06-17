@@ -121,6 +121,9 @@ class QdrantSink(BatchSink):
         """    
         self.logger.info(f"[START - START BATCH]: Batch Number={self.batch_idx}, Summarized Points Number={self.batch_idx*self.batch_size}")
 
+        self.logger.info(f"EMBEDDING_MODEL: {EMBEDDING_MODEL}")
+        exit(2)
+
         self.issues = []
 
 
@@ -135,9 +138,6 @@ class QdrantSink(BatchSink):
             record: Individual record in the stream.
             context: Stream partition or context dictionary.
         """
-
-        self.logger.info(f"EMBEDDING_MODEL: {EMBEDDING_MODEL}")
-        exit(2)
 
         issue_info = {
             'embedding_input': record['embedding_input'],
