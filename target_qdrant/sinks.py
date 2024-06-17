@@ -217,9 +217,7 @@ class QdrantSink(BatchSink):
                 for summarizer_input in summarizer_inputs:
                     futures.append(executor.submit(openai.chat.completions.create, 
                                                 model=SUMMARY_MODEL, 
-                                                messages=[summarizer_input],
-                                                encoding_format="float" if EMBEDDING_MODEL == "SFR Embedding Mistral" else None
-                                                ))
+                                                messages=[summarizer_input]))
 
                 results = []
 
@@ -251,8 +249,7 @@ class QdrantSink(BatchSink):
 
                                 future = executor.submit(openai.chat.completions.create, 
                                                             model=SUMMARY_MODEL, 
-                                                            messages=[process_API_input(content)],
-                                                            encoding_format="float" if EMBEDDING_MODEL == "SFR Embedding Mistral" else None)
+                                                            messages=[process_API_input(content)])
                                 
                                 summarizer_inputs[idx]["content"] = content
                             else:
@@ -299,7 +296,7 @@ class QdrantSink(BatchSink):
                     futures.append(executor.submit(openai.embeddings.create, 
                                                 model=EMBEDDING_MODEL, 
                                                 input=[embedding_input],
-                                                encoding_format="float"))
+                                                encoding_format="float" if EMBEDDING_MODEL == "SFR Embedding Mistral" else None))
 
                 results = []
 
@@ -330,7 +327,7 @@ class QdrantSink(BatchSink):
                                 future = executor.submit(openai.embeddings.create, 
                                                 model=EMBEDDING_MODEL, 
                                                 input=[content],
-                                                encoding_format="float")
+                                                encoding_format="float" if EMBEDDING_MODEL == "SFR Embedding Mistral" else None)
                                 
                                 embedding_inputs[idx] = content
                             else:
